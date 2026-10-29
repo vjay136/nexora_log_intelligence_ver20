@@ -176,8 +176,8 @@ if [[ $ca_commit_required == true ]]; then
 fi
 
 # Commit controller trust and endpoint settings only after the candidate
-# controller has passed certificate, identity, and service checks. A failed
-# setup attempt must never erase the last-known working CA or endpoint.
+# controller has passed certificate, identity, and service checks.
+# A failed setup attempt must never erase the last-known working CA or endpoint.
 NLI_SETUP_URL=$controller_url NLI_SETUP_CA=$custom_ca NLI_SETUP_ENV=$environment NLI_SETUP_REGION=$region NLI_SETUP_TEAM=$team \
 python3 - "$CONFIG" <<'PY'
 import json, os, pathlib, sys, tempfile
