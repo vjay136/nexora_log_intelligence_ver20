@@ -60,6 +60,48 @@ func listDocuments(r *http.Request, store metastore.Store, collection string) ([
 	}
 	return out, nil
 }
+
+func listParserDocuments(r *http.Request, store metastore.Store) ([]map[string]any, error) {
+	state := r.URL.Query().Get("state")
+	limit := 100
+	if parsed, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && parsed > 0 && parsed <= 1000 {
+		limit = parsed
+	}
+	documents, err := store.List(r.Context(), "parser-packs", metastore.Query{State: state, Limit: limit})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]map[string]any, 0, len(documents))
+	for _, doc := range documents {
+		out = append(out, parserDocumentView(doc))
+	}
+	return out, nil
+}
+
+// restoreParserDocument is the compensation boundary for parser lifecycle
+// transitions that also require a materialized fleet bundle and approval
+// proposal. A catalog revision must never remain published when either of
+// those follow-up operations fails.
+func (s *Server) restoreParserDocument(ctx context.Context, previous metastore.Document) error {
+	if _, err := s.metadata.Put(ctx, metastore.Document{
+		Collection: previous.Collection,
+		ID:         previous.ID,
+		State:      previous.State,
+		Payload:    append(json.RawMessage(nil), previous.Payload...),
+		CreatedBy:  previous.CreatedBy,
+	}); err != nil {
+		return fmt.Errorf("restore parser catalog state: %w", err)
+	}
+	bundle, err := s.buildActiveParserBundle(ctx)
+	if err != nil {
+		return fmt.Errorf("rebuild previous parser bundle: %w", err)
+	}
+	if _, err = s.materializeParserBundle(bundle); err != nil {
+		return fmt.Errorf("restore previous parser bundle: %w", err)
+	}
+	return nil
+}
+
 func unsafeDeclarative(value any) error {
 	switch item := value.(type) {
 	case map[string]any:
@@ -112,7 +154,7 @@ func (s *Server) handleParserPacks(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
-		items, err := listDocuments(r, s.metadata, "parser-packs")
+		items, err := listParserDocuments(r, s.metadata)
 		if err != nil {
 			jsonError(w, "parser catalog unavailable", http.StatusServiceUnavailable)
 			return
@@ -181,7 +223,7 @@ func (s *Server) handleParserPack(w http.ResponseWriter, r *http.Request) {
 			jsonError(w, "parser pack not found", http.StatusNotFound)
 			return
 		}
-		jsonOK(w, documentView(doc))
+		jsonOK(w, parserDocumentView(doc))
 	case http.MethodPut:
 		current, err := s.metadata.Get(r.Context(), "parser-packs", id, 0)
 		if err != nil {
@@ -267,15 +309,44 @@ func (s *Server) handleParserAction(w http.ResponseWriter, r *http.Request, id, 
 			jsonError(w, "only approved parser packs can activate", http.StatusConflict)
 			return
 		}
-		next = "active"
+		next = "published"
+	case "repair":
+		if doc.State != "approved" && doc.State != "active" && doc.State != "published" {
+			jsonError(w, "only blocked approved or published parser packs can enter repair", http.StatusConflict)
+			return
+		}
+		if _, _, compatibilityErr := runtimeParserPackForDocument(doc); compatibilityErr == nil {
+			jsonError(w, "parser runtime definition is valid and does not require compatibility repair", http.StatusConflict)
+			return
+		}
+		next = "rejected"
 	default:
 		jsonError(w, "unknown parser action", http.StatusNotFound)
 		return
 	}
 	var payload map[string]any
-	_ = json.Unmarshal(doc.Payload, &payload)
+	if err := json.Unmarshal(doc.Payload, &payload); err != nil {
+		jsonError(w, "parser payload is invalid", http.StatusConflict)
+		return
+	}
+	if action == "activate" {
+		_, encodedPack, compatibilityErr := runtimeParserPackForDocument(doc)
+		if compatibilityErr != nil {
+			jsonError(w, "parser cannot be published to the live runtime: "+compatibilityErr.Error(), http.StatusConflict)
+			return
+		}
+		payload["runtime_pack"] = json.RawMessage(encodedPack)
+		payload["published_by"] = principal.Username
+		payload["published_at"] = time.Now().UTC()
+	}
+	if action == "repair" {
+		delete(payload, "runtime_pack")
+		payload["activated"] = false
+		payload["compatibility_repair_by"] = principal.Username
+		payload["compatibility_repair_at"] = time.Now().UTC()
+	}
 	payload["review_state"] = next
-	payload["activated"] = next == "active"
+	payload["activated"] = next == "published"
 	payload["reviewed_by"] = principal.Username
 	updated, _ := json.Marshal(payload)
 	saved, err := s.metadata.Put(r.Context(), metastore.Document{Collection: "parser-packs", ID: id, State: next, Payload: updated, CreatedBy: doc.CreatedBy})
@@ -283,8 +354,32 @@ func (s *Server) handleParserAction(w http.ResponseWriter, r *http.Request, id, 
 		jsonError(w, "parser transition failed", http.StatusInternalServerError)
 		return
 	}
+	response := parserDocumentView(saved)
+	if action == "activate" {
+		bundle, bundleErr := s.buildActiveParserBundle(r.Context())
+		if bundleErr == nil {
+			_, bundleErr = s.materializeParserBundle(bundle)
+		}
+		var proposal metastore.Document
+		if bundleErr == nil {
+			proposal, bundleErr = s.proposeParserBundleRollout(r.Context(), principal.Username, "Publish parser catalog pack "+id, "Parser catalog publication requires independent fleet rollout approval.", "all_eligible", bundle, nil)
+		}
+		if bundleErr != nil {
+			rollbackErr := s.restoreParserDocument(r.Context(), doc)
+			detail := "parser publication was reverted because the fleet rollout proposal could not be prepared: " + bundleErr.Error()
+			if rollbackErr != nil {
+				detail += "; automatic rollback also failed: " + rollbackErr.Error()
+			}
+			s.auditAction(principal, "parser.activate_sync_failed", "parser-packs/"+id, "failure", map[string]string{"error": detail})
+			jsonError(w, detail, http.StatusServiceUnavailable)
+			return
+		}
+		response["bundle_hash"] = bundle.BundleHash
+		response["rollout_proposal"] = documentView(proposal)
+		response["approval_gate"] = "pending_approval"
+	}
 	s.auditAction(principal, "parser."+action, "parser-packs/"+id, "success", map[string]string{"state": next})
-	jsonOK(w, documentView(saved))
+	jsonOK(w, response)
 }
 
 func (s *Server) handleConfiguration(w http.ResponseWriter, r *http.Request, collection string) {

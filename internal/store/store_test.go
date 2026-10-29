@@ -108,6 +108,49 @@ func TestSupabaseAdapterUsesProtectedRPCs(t *testing.T) {
 	}
 }
 
+func TestSupabaseRetriesOnlyIdempotentOperations(t *testing.T) {
+	var healthCalls, putCalls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/rest/v1/rpc/nli_health":
+			healthCalls++
+			if healthCalls < 3 {
+				w.WriteHeader(530)
+				_, _ = io.WriteString(w, `{"message":"temporary edge recovery"}`)
+				return
+			}
+			_, _ = io.WriteString(w, `{"status":"ok","schema_version":1}`)
+		case "/rest/v1/rpc/nli_put_document":
+			putCalls++
+			w.WriteHeader(530)
+			_, _ = io.WriteString(w, `{"message":"response unavailable"}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	storage, err := Open(Config{
+		Provider: "supabase", SupabaseURL: server.URL, SupabaseAnonKey: "sb_publishable_test",
+		SupabaseControllerSecret: []byte(strings.Repeat("s", 32)), AllowInsecure: true, Timeout: 2 * time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer storage.Close()
+	if err := storage.Health(context.Background()); err != nil {
+		t.Fatalf("idempotent health did not recover: %v", err)
+	}
+	if healthCalls != 3 {
+		t.Fatalf("health attempts=%d, want 3", healthCalls)
+	}
+	_, err = storage.Put(context.Background(), Document{Collection: "parser-packs", ID: "mail", State: "draft", Payload: json.RawMessage(`{}`), CreatedBy: "alice"})
+	if err == nil || putCalls != 1 {
+		t.Fatalf("write retry contract error=%v calls=%d, want failure after one attempt", err, putCalls)
+	}
+}
+
 func TestSupabaseAdapterRejectsUnsafeConfiguration(t *testing.T) {
 	secret := []byte("controller-secret-123456789012345678901234")
 	if _, err := Open(Config{Provider: "supabase", SupabaseURL: "http://project.supabase.co", SupabaseAnonKey: "anon", SupabaseControllerSecret: secret}); err == nil {

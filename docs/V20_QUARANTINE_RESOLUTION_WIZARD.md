@@ -1,4 +1,4 @@
-# NLI 20.0.0-1 Quarantine Resolution Wizard
+# NLI 20.0.0-2 Quarantine Resolution Wizard
 
 The Quarantine Resolution Wizard is the single operator workspace for turning a
 retained parsing failure into a reviewed parser revision. It reuses the existing

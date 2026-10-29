@@ -4,6 +4,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -372,32 +373,57 @@ func (s *supabaseStore) call(ctx context.Context, function string, args any, out
 		return err
 	}
 	endpoint := s.base.ResolveReference(&url.URL{Path: "/rest/v1/rpc/" + function})
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint.String(), strings.NewReader(string(body)))
-	if err != nil {
-		return err
+	// Health and reads are idempotent. Retry a small, bounded number of times
+	// when the Supabase edge returns a transient 429/5xx response (including
+	// Cloudflare 530) or drops the connection. Revision-creating writes are
+	// never retried because a lost response must not create a second revision.
+	maxAttempts := 1
+	if function == "nli_health" || function == "nli_get_document" || function == "nli_list_documents" {
+		maxAttempts = 3
 	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("apikey", s.anonKey)
-	// Modern sb_publishable_ keys are not JWTs. Supabase accepts them only
-	// through apikey; retain Bearer for legacy anon JWT deployments.
-	if !strings.HasPrefix(s.anonKey, "sb_") {
-		req.Header.Set("Authorization", "Bearer "+s.anonKey)
-	}
-	req.Header.Set("X-NLI-Controller-Secret", string(s.controllerSecret))
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	data, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
-	if err != nil {
-		return err
-	}
-	if len(data) > maxResponseBytes {
-		return fmt.Errorf("Supabase %s response exceeds 64 MiB", function)
-	}
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+	var lastErr error
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		req, requestErr := http.NewRequestWithContext(ctx, http.MethodPost, endpoint.String(), bytes.NewReader(body))
+		if requestErr != nil {
+			return requestErr
+		}
+		req.Header.Set("Accept", "application/json")
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("apikey", s.anonKey)
+		// Modern sb_publishable_ keys are not JWTs. Supabase accepts them only
+		// through apikey; retain Bearer for legacy anon JWT deployments.
+		if !strings.HasPrefix(s.anonKey, "sb_") {
+			req.Header.Set("Authorization", "Bearer "+s.anonKey)
+		}
+		req.Header.Set("X-NLI-Controller-Secret", string(s.controllerSecret))
+		resp, requestErr := s.client.Do(req)
+		if requestErr != nil {
+			lastErr = requestErr
+			if attempt+1 < maxAttempts && ctx.Err() == nil {
+				if err := waitForStoreRetry(ctx, attempt); err != nil {
+					return err
+				}
+				continue
+			}
+			return requestErr
+		}
+		data, readErr := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
+		closeErr := resp.Body.Close()
+		if readErr != nil {
+			return readErr
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+		if len(data) > maxResponseBytes {
+			return fmt.Errorf("Supabase %s response exceeds 64 MiB", function)
+		}
+		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+			if out != nil && len(strings.TrimSpace(string(data))) > 0 {
+				return json.Unmarshal(data, out)
+			}
+			return nil
+		}
 		var envelope struct {
 			Message string `json:"message"`
 			Details string `json:"details"`
@@ -419,12 +445,32 @@ func (s *supabaseStore) call(ctx context.Context, function string, args any, out
 		if len(message) > 1024 {
 			message = message[:1024]
 		}
-		return fmt.Errorf("Supabase %s failed with HTTP %d: %s", function, resp.StatusCode, message)
+		lastErr = fmt.Errorf("Supabase %s failed with HTTP %d: %s", function, resp.StatusCode, message)
+		transient := resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500
+		if transient && attempt+1 < maxAttempts && ctx.Err() == nil {
+			if err := waitForStoreRetry(ctx, attempt); err != nil {
+				return err
+			}
+			continue
+		}
+		return lastErr
 	}
-	if out != nil && len(strings.TrimSpace(string(data))) > 0 {
-		return json.Unmarshal(data, out)
+	if lastErr != nil {
+		return lastErr
 	}
-	return nil
+	return fmt.Errorf("Supabase %s request failed", function)
+}
+
+func waitForStoreRetry(ctx context.Context, attempt int) error {
+	delay := time.Duration(100+(attempt*150)) * time.Millisecond
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func (s *supabaseStore) Health(ctx context.Context) error {

@@ -1,5 +1,12 @@
 # Changelog
 
+## [20.0.0-2] - 2026-10-29
+
+- Keep parser catalog and live synchronization APIs available while safely reconciling malformed or legacy parser records.
+- Make Quarantine Resolution Wizard review, rollout, acknowledgement, replay, and verification a single state-derived completion path with explicit blockers and operator roles.
+- Place Parser Management immediately below Assurance & Release and publish canonical per-tab pending-action counters that clear when work is resolved.
+- Validate upgrade, rollback, and re-upgrade against the published Ver20 Release 1 RPMs.
+
 ## [20.0.0-1] - 2026-10-29
 
 - Preserve parser asset bytes through independent rollout approval so the approved bundle hash remains verifiable and deployable.

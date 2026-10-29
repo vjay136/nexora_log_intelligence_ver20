@@ -1,5 +1,26 @@
 # NLI v20 release infrastructure
 
+## Release 20.0.0-2
+
+Release 2 keeps the controller and live synchronization path available while
+it reconciles parser records created by earlier releases. Malformed historical
+records are isolated and reported with actionable diagnostics rather than
+terminating the complete parser catalog response.
+
+The Quarantine Resolution Wizard now presents independent review, exact-bundle
+rollout, origin-client acknowledgement, replay, and verification as one
+ordered completion path. Each blocker includes the responsible role, required
+action, and the canonical evidence that will unlock the next stage. Sidebar
+sections place Parser Management immediately below Assurance & Release and use
+canonical pending counters for actionable work only.
+
+### Operator acceptance for release 2
+
+1. Upgrade a Release 1 controller containing active, draft, rejected, and legacy parser records. Confirm the controller remains healthy, the catalog lists valid records, and isolated records include a recoverable diagnostic.
+2. Complete Quarantine Resolution Wizard Steps 7–9 with two authorized users: submit and independently approve the parser, publish it, propose the exact bundle to the origin client, independently approve rollout, wait for the exact applied hash, replay, and verify the retained record outcome.
+3. Confirm the creator cannot approve their own parser or rollout and replay remains blocked before the origin client acknowledges the exact bundle hash.
+4. Confirm sidebar pending counters match canonical actionable records and clear after approval, cancellation, acknowledgement, replay, or resolution.
+
 ## Release 20.0.0-1
 
 Release 1 completes quarantine recovery after candidate generation. The
@@ -125,7 +146,7 @@ This directory documents the supported V20 release path. It builds source-derive
 - Release input must be one clean, committed, frozen Git revision. Dirty or untracked source is refused.
 - Outputs go to `NLI_BUILD_SCRATCH` or an explicit output directory; the repository `dist` directory is never used.
 - `nli_clinet_ver20.rpm` is a byte-identical filename alias of `nli_client_ver20.rpm`. Both contain the same `nli-client` NEVRA and must not be treated as separate packages.
-- Upgrade acceptance uses genuine Ver19 Release 8 client and controller RPMs as the previous-major baseline, then proves upgrade, rollback, re-upgrade, restart, state preservation, and uninstall behavior on Rocky Linux 9 and Rocky Linux 10.2.
+- Release 2 acceptance uses the genuine published Ver20 Release 1 client and controller RPMs, then proves upgrade, rollback, re-upgrade, restart, state preservation, and uninstall behavior on Rocky Linux 9 and Rocky Linux 10.2.
 - The release remains unsigned unless an explicit signing key is supplied. Unsigned output must never be described as signed.
 - Operators receive one `nli-v<version>-<release>-x86_64.tar.gz` archive plus its external `.sha256`. The archive contains `RELEASE_ID`, all RPM/web/operator artifacts, and the complete internal checksum manifest. It must be extracted into a fresh versioned directory.
 

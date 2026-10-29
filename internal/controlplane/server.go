@@ -499,6 +499,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/v1/telemetry/stream", guard(middleware.PermissionReadTelemetry, s.streamTelemetry.SSEHandlerWithEvents(s.hub)))
 	s.mux.HandleFunc("/api/v1/telemetry/stream/snapshot", guard(middleware.PermissionReadTelemetry, s.streamTelemetry.SnapshotHandler))
 	s.mux.HandleFunc("/api/v1/sync/snapshot", guard(middleware.PermissionReadTelemetry, s.handleSyncSnapshot))
+	s.mux.HandleFunc("/api/v1/navigation/counts", guard(middleware.PermissionSystemHealth, s.handleNavigationCounts))
 	s.mux.HandleFunc("/api/v1/communications/status", guard(middleware.PermissionReadTelemetry, s.handleCommunicationStatus))
 	s.mux.HandleFunc("/api/v1/communications/browser-heartbeat", s.handleBrowserCommunicationHeartbeat)
 	s.mux.HandleFunc("/api/v1/notifications", s.handleNotificationFeed)

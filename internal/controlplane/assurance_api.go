@@ -913,7 +913,6 @@ func (s *Server) handleAssuranceParser(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "parser lifecycle update failed", 500)
 		return
 	}
-	s.auditAction(p, "assurance.parser_"+action, "parser-packs/"+id, "success", nil)
 	response := map[string]any{"id": id, "revision": saved.Revision, "state": state, "review_state": state, "published": state == "published"}
 	if action == "publish" || action == "rollback" || action == "offboard" {
 		bundle, bundleErr := s.buildActiveParserBundle(r.Context())
@@ -925,14 +924,20 @@ func (s *Server) handleAssuranceParser(w http.ResponseWriter, r *http.Request) {
 			proposal, bundleErr = s.proposeParserBundleRollout(r.Context(), p.Username, "Assurance parser "+action+" "+id, "Parser bundle changes require independent rollout approval before client synchronization.", "all_eligible", bundle, nil)
 		}
 		if bundleErr != nil {
-			s.auditAction(p, "assurance.parser_"+action+"_sync_failed", "parser-packs/"+id, "failure", map[string]string{"error": bundleErr.Error()})
-			jsonError(w, "parser "+action+" state was saved but the fleet rollout proposal could not be prepared: "+bundleErr.Error(), 503)
+			rollbackErr := s.restoreParserDocument(r.Context(), doc)
+			detail := "parser " + action + " was reverted because the fleet rollout proposal could not be prepared: " + bundleErr.Error()
+			if rollbackErr != nil {
+				detail += "; automatic rollback also failed: " + rollbackErr.Error()
+			}
+			s.auditAction(p, "assurance.parser_"+action+"_sync_failed", "parser-packs/"+id, "failure", map[string]string{"error": detail})
+			jsonError(w, detail, 503)
 			return
 		}
 		response["bundle_hash"] = bundle.BundleHash
 		response["rollout_proposal"] = documentView(proposal)
 		response["approval_gate"] = "pending_approval"
 	}
+	s.auditAction(p, "assurance.parser_"+action, "parser-packs/"+id, "success", nil)
 	jsonOK(w, response)
 }
 func (s *Server) recordAssuranceHistory(result map[string]any, actor string) {

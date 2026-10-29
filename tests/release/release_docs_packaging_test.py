@@ -11,6 +11,8 @@ DOC = "V20_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md"
 WIZARD = "V20_QUARANTINE_RESOLUTION_WIZARD.md"
 R1_RESULTS = "V20_R1_TEST_RESULTS.md"
 R1_OPERATOR = "V20_R1_QRW_OPERATOR_TEST_GUIDE.md"
+R2_RESULTS = "V20_R2_TEST_RESULTS.md"
+R2_OPERATOR = "V20_R2_QRW_OPERATOR_GUIDE.md"
 DIAGRAM = "NLI_V20_UPES_GPRS_ARCHITECTURE.svg"
 
 
@@ -24,6 +26,8 @@ def validate(root: Path, output: Path, client: Path, controller: Path) -> None:
         WIZARD: root / "docs" / WIZARD,
         R1_RESULTS: root / "docs" / R1_RESULTS,
         R1_OPERATOR: root / "docs" / R1_OPERATOR,
+        R2_RESULTS: root / "docs" / R2_RESULTS,
+        R2_OPERATOR: root / "docs" / R2_OPERATOR,
         DIAGRAM: root / "docs" / "architecture" / DIAGRAM,
     }
     for name, source in sources.items():
@@ -36,7 +40,7 @@ def validate(root: Path, output: Path, client: Path, controller: Path) -> None:
 
     guide = sources[DOC].read_text(encoding="utf-8")
     for claim in (
-        "20.0.0-1",
+        "20.0.0-2",
         "does not accept or store a raw record or source path",
         "does not claim a",
         "submitted_checksum",
@@ -70,6 +74,16 @@ def validate(root: Path, output: Path, client: Path, controller: Path) -> None:
         if claim not in operator:
             fail(f"R1 operator guide does not document expected control: {claim!r}")
 
+    results_r2 = sources[R2_RESULTS].read_text(encoding="utf-8")
+    for claim in ("20.0.0-2", "HTTP 530", "malformed parser isolation", "automatic rollback"):
+        if claim not in results_r2:
+            fail(f"R2 test report does not record expected evidence: {claim!r}")
+
+    operator_r2 = sources[R2_OPERATOR].read_text(encoding="utf-8")
+    for claim in ("Verify origin acknowledgement", "Request targeted replay", "creator cannot approve", "exact desired bundle hash"):
+        if claim not in operator_r2:
+            fail(f"R2 operator guide does not document expected control: {claim!r}")
+
     for relative in (
         "packaging/build-rpms.sh",
         "packaging/rpm/nli-client.spec",
@@ -95,12 +109,12 @@ def validate(root: Path, output: Path, client: Path, controller: Path) -> None:
         "packaging/rpm/nli-client.spec",
         "packaging/rpm/nli-controller-agent.spec",
     ):
-        if "20.0.0-1" not in (root / relative).read_text(encoding="utf-8"):
+        if "20.0.0-2" not in (root / relative).read_text(encoding="utf-8"):
             fail(f"{relative} does not identify the current release")
 
     release_env = (root / "packaging" / "release.env").read_text(encoding="utf-8")
-    if "NLI_VERSION=20.0.0" not in release_env or "NLI_RELEASE=1" not in release_env:
-        fail("packaging release identity is not 20.0.0-1")
+    if "NLI_VERSION=20.0.0" not in release_env or "NLI_RELEASE=2" not in release_env:
+        fail("packaging release identity is not 20.0.0-2")
 
 
 def main() -> None:

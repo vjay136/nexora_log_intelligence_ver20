@@ -7,7 +7,7 @@ const origin = 'http://127.0.0.1:4176';
 const tabs = ['operations', 'monitoring', 'streams', 'sync-fabric', 'nhle-monitor', 'napi-monitor', 'nal-monitor', 'assurance', 'quarantine-wizard', 'upes', 'parser-workspace', 'nupire', 'api-monitor', 'field-integrity', 'fleet', 'parser-sync', 'clients', 'controller', 'parsers', 'migration', 'input-paths', 'kv', 'static', 'projection', 'studio', 'regex', 'knownkeys', 'semantic', 'engine-network', 'engine-url', 'engine-email', 'engine-subject', 'outputs', 'metadata', 'unknowns', 'drift', 'performance', 'rollouts', 'artifacts', 'security', 'system', 'communications', 'notifications', 'ai'];
 const assets = Object.fromEntries(await Promise.all(['index.html', 'app.js', 'styles.css', 'nli-mark.svg', 'nexora-logo-v20.png', 'login-banner-v20.png', 'nexora-poster-v20.png'].map(async name => [name, await readFile(new URL(name, import.meta.url))])));
 
-async function mockController(page, { role = 'admin', healthIdentity = 'v20', upesSnapshot = null, assurancePassed = true, nupireCandidates = [], quarantineRaw = 'exact raw source line', qrwParsers = [], qrwRecords = null, qrwSyncAssets = null } = {}) {
+async function mockController(page, { role = 'admin', healthIdentity = 'v20', upesSnapshot = null, assurancePassed = true, nupireCandidates = [], quarantineRaw = 'exact raw source line', qrwParsers = [], qrwRecords = null, qrwSyncAssets = null, navigationCounts = null, managedParsers = [] } = {}) {
   const observed = [];
   const cases = [];
   const uploads = [];
@@ -33,6 +33,7 @@ async function mockController(page, { role = 'admin', healthIdentity = 'v20', up
   const qrwRolloutRequests = [];
   let currentBundleHash = qrwSyncAssets?.[0]?.desired?.sha256 || '';
   let currentQRWParsers = qrwParsers.map(item => structuredClone(item));
+  const currentManagedParsers = managedParsers.map(item => structuredClone(item));
   let currentQRWRecords = qrwRecords ? structuredClone(qrwRecords) : null;
   let currentQRWSyncAssets = qrwSyncAssets ? structuredClone(qrwSyncAssets) : null;
   const currentQRWHistory = [];
@@ -51,6 +52,21 @@ async function mockController(page, { role = 'admin', healthIdentity = 'v20', up
       return route.fulfill({ status, headers, body: JSON.stringify(value) });
     };
     if (path === '/api/v1/health') return fulfill({ status: 'ok', service: 'nli-controller-agent', api_version: 'v1' });
+    if (path === '/api/v1/navigation/counts') {
+      const lifecycle = items => items.filter(item => ['draft','rejected','in_review','approved'].includes(item.state)).length;
+      const waiting = (currentQRWRecords || [{ status: 'waiting' }]).filter(item => ['waiting','replay_failed'].includes(item.status)).length;
+      const parserActions = lifecycle(currentQRWParsers);
+      const counts = {
+        assurance: { total: assuranceRuns.filter(item => ['queued','running'].includes(item.state || item.payload?.state)).length },
+        'quarantine-wizard': { total: waiting }, unknowns: { total: waiting }, upes: { total: waiting },
+        rollouts: { total: rolloutProposals.filter(item => item.state === 'pending_approval').length },
+        parsers: { total: parserActions }, 'parser-workspace': { total: parserActions },
+        'input-paths': { total: lifecycle(inputProfiles) }, outputs: { total: lifecycle(outputProfiles) },
+        kv: { total: 0 }, static: { total: 0 }, projection: { total: 0 }, studio: { total: 0 }, regex: { total: 0 }, knownkeys: { total: 0 }, semantic: { total: 0 },
+        ...(navigationCounts || {}),
+      };
+      return fulfill({ generated_at: new Date().toISOString(), counts, source: 'controller lifecycle stores' });
+    }
     if (path === '/api/v1/auth/login' && request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { ...headers, allow: 'POST, OPTIONS' } });
     if (path === '/api/v1/auth/login') { authenticated = true; return fulfill({ status: 'ok' }); }
     if (path === '/api/v1/auth/me') return authenticated ? fulfill({ username: 'test-operator', role, permissions: ['assurance:run'] }) : fulfill({ error: 'unauthorized' }, 401);
@@ -102,7 +118,8 @@ async function mockController(page, { role = 'admin', healthIdentity = 'v20', up
     if (path === '/api/v1/parser-sync/rollout' && request.method() === 'POST') { const body=request.postDataJSON(),proposal={id:`qrw-rollout-${qrwRolloutRequests.length+1}`,created_by:'test-operator',state:'pending_approval',payload:{type:'parser_sync',name:'Parser bundle rollout',target_mode:body.target_mode,target_nodes:body.target_mode==='all_eligible'?currentQRWSyncAssets?.[0]?.clients?.map(item=>item.node_id)||[]:[body.origin_node_id],bundle_hash:body.bundle_hash}};qrwRolloutRequests.push(body);rolloutProposals.push(proposal);return fulfill({proposal},201); }
     if (path === '/api/v1/parser-sync/verify' && request.method() === 'POST') { const body=request.postDataJSON();qrwSyncVerifications.push(body);const asset=currentQRWSyncAssets?.find(item=>item.asset_id===body.asset_id);const origin=asset?.clients?.find(item=>item.node_id==='node-1');if(origin){origin.applied_hash=origin.desired_hash;origin.drifted=false;}return fulfill({ verified: true, message: 'Reported state refreshed' }); }
     if (path === '/api/v1/parser-sync/retry' && request.method() === 'POST') return fulfill({ proposal_id: 'proposal-1', state: 'pending_approval', message: 'Rollout proposal created; independent approval is required.' });
-    if (path === '/api/v1/parser-packs') return fulfill({ parser_packs: [] });
+    if (path.match(/^\/api\/v1\/parser-packs\/[^/]+\/(submit|approve|reject|activate|repair)$/) && request.method() === 'POST') { const [,id,action]=path.match(/^\/api\/v1\/parser-packs\/([^/]+)\/(submit|approve|reject|activate|repair)$/),doc=currentManagedParsers.find(item=>item.id===id);if(!doc)return fulfill({error:'not found'},404);doc.state=({submit:'in_review',approve:'approved',reject:'rejected',activate:'published',repair:'rejected'})[action];doc.runtime_sync=action==='repair'?{status:'not_published'}:doc.runtime_sync;return fulfill(doc); }
+    if (path === '/api/v1/parser-packs') return fulfill({ parser_packs: currentManagedParsers });
     if (path === '/api/v1/parsers') return fulfill([{ id: 'smtp', version: 7, format: 'syslog', description: 'SMTP parser', fields: ['message'] }]);
     if (path === '/api/v1/migration/reports') return fulfill({ reports: [] });
     if (path === '/api/v1/config/output-destinations' && request.method() === 'POST') { outputSaves.push(request.postDataJSON()); return fulfill({ id: 'customer-output', state: 'draft', revision: 1 }); }
@@ -282,7 +299,7 @@ test('Monitoring exposes eleven canonical dashboards using only the shared recov
   await page.getByRole('tab', { name: 'Assurance & Release Health' }).click();
   await expect(page.locator('[data-monitoring-panel=assurance]')).toContainText('Release readinessready');
   const newRequests = observed.slice(before).filter(item => !item.endsWith('/api/v1/sync/stream'));
-  expect(newRequests.every(item => item === 'GET /api/v1/sync/snapshot')).toBe(true);
+  expect(newRequests.every(item => ['GET /api/v1/sync/snapshot','GET /api/v1/navigation/counts'].includes(item))).toBe(true);
 });
 
 test('diagnostics span the dashboard grid and remain usable at narrow widths', async ({ page }) => {
@@ -335,7 +352,8 @@ test('navigation leads with Command Center, Assurance Lab, approvals and notific
   await mockController(page);
   await login(page);
   const ids=await page.locator('.nav-item').evaluateAll(items=>items.map(item=>item.dataset.page));
-  expect(ids.slice(0,14)).toEqual(['operations','monitoring','streams','assurance','quarantine-wizard','upes','rollouts','parser-sync','artifacts','parser-workspace','nupire','field-integrity','ai','notifications']);
+  expect(ids.slice(0,18)).toEqual(['operations','monitoring','streams','assurance','quarantine-wizard','upes','rollouts','parser-sync','artifacts','parser-workspace','nupire','field-integrity','ai','parsers','studio','regex','knownkeys','drift']);
+  expect(ids[18]).toBe('notifications');
   const input=ids.indexOf('input-paths'),output=ids.indexOf('outputs'),parsing=ids.indexOf('kv');
   expect(ids[input+1]).toBe('migration');
   expect(ids[input+2]).toBe('outputs');
@@ -343,7 +361,8 @@ test('navigation leads with Command Center, Assurance Lab, approvals and notific
   expect(ids[output+2]).toBe('unknowns');
   expect(ids[output+3]).toBe('performance');
   expect(ids[parsing]).toBe('kv');
-  expect(ids.indexOf('parsers')).toBeGreaterThan(parsing);
+  expect(ids.indexOf('parsers')).toBeLessThan(parsing);
+  expect(ids.indexOf('parsers')).toBe(ids.indexOf('ai')+1);
   expect(ids.indexOf('engine-network')).toBeGreaterThan(ids.indexOf('drift'));
 });
 
@@ -491,16 +510,23 @@ test('QRW stages 6–9 give the next action and gate replay on the exact origin 
   await expect(page.locator('.qrw-next-action')).toContainText('Publish the approved candidate');
   await lifecycle.getByRole('button',{name:'Publish',exact:true}).click();
   await page.getByTestId('nav-quarantine-wizard').click();
-  await expect(page.locator('.qrw-next-action')).toContainText('Wait for the origin client to acknowledge the exact bundle');
-  await expect(page.getByRole('button',{name:'Request gated replay'})).toBeDisabled();
+  await expect(page.locator('.qrw-next-action')).toContainText('Create the origin-client rollout proposal');
+  await expect(page.getByRole('button',{name:/Request targeted replay/})).toBeDisabled();
   await expect(page.locator('#gprs-replay-form [name=record_ids] option[value="q-1"]')).toHaveAttribute('disabled','');
+  await expect(page.getByTestId('qrw-deployment-status')).toContainText('Published bundle available');
+  await expect(page.getByTestId('qrw-deployment-status')).toContainText('Origin rollout proposed');
   await page.getByRole('button',{name:'Propose to all eligible clients'}).click();
   await expect.poll(()=>mock.qrwRolloutRequests).toHaveLength(1);
   expect(mock.qrwRolloutRequests[0]).toEqual({target_mode:'all_eligible',origin_node_id:'node-1',node_ids:[],bundle_hash:checksum});
   const rolloutRow=page.locator('#page tr').filter({hasText:'qrw-rollout-1'});
   await expect(rolloutRow).toContainText('all_eligible · 2 client(s)');
   await expect(rolloutRow.getByRole('button',{name:'Approve'})).toBeDisabled();
-  await page.locator('.qrw-next-action').getByRole('button',{name:'Verify fleet state'}).click();
+  await expect(page.locator('.qrw-next-action')).toContainText('Independent rollout approval is required');
+  mock.rolloutProposals[0].state='approved';
+  await page.getByTestId('nav-operations').click();
+  await page.getByTestId('nav-quarantine-wizard').click();
+  await expect(page.locator('.qrw-next-action')).toContainText('Verify the origin client acknowledgement');
+  await page.locator('.qrw-next-action').getByRole('button',{name:/Verify origin acknowledgement/}).click();
   await expect.poll(()=>mock.qrwSyncVerifications).toHaveLength(1);
   expect(mock.qrwSyncVerifications[0]).toEqual({asset_class:'parser',asset_id:'qr-candidate'});
   await page.getByTestId('nav-quarantine-wizard').click();
@@ -509,9 +535,10 @@ test('QRW stages 6–9 give the next action and gate replay on the exact origin 
   const replay=page.locator('#gprs-replay-form');
   await replay.locator('[name=record_ids]').selectOption('q-1');
   await expect(replay.locator('[name=node_id]')).toHaveValue('node-1');
-  await replay.getByRole('button',{name:'Request gated replay'}).click();
+  await replay.getByRole('button',{name:/Request targeted replay/}).click();
   await expect.poll(()=>mock.qrwReplays).toHaveLength(1);
   expect(mock.qrwReplays[0]).toEqual({record_ids:['q-1'],node_id:'node-1'});
+  await expect(page.locator('[data-qrw-panel="9"] .qrw-runbook')).toContainText('Origin record resolved');
   await page.getByTestId('nav-quarantine-wizard').click();
   await expect(page.locator('.qrw-next-action')).toContainText('Verify the replay result');
   await page.locator('[data-wizard-step="7"] button').click();
@@ -680,6 +707,7 @@ test('V20 security identity and task navigation remain accessible', async ({ pag
   for (const group of ['COMMAND CENTER','ASSURANCE & RELEASE','OPERATIONS','REAL-TIME SUBSYSTEMS','INPUT', 'PARSING ENGINE', 'OUTPUT', 'CLIENT MANAGEMENT', 'CONTROLLER MANAGEMENT', 'PARSER MANAGEMENT']) {
     expect(groups).toContain(group);
   }
+  expect(groups[groups.indexOf('ASSURANCE & RELEASE') + 1]).toBe('PARSER MANAGEMENT');
   await page.getByTestId('nav-fleet').click();
   await expect(page.getByText('Enrolled clients', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Client monitoring dimensions')).toContainText('Parser activity');
@@ -1364,6 +1392,28 @@ test('pending approval nav badge follows controller state and clears after an ac
   await page.getByRole('button',{name:'Approve'}).click();
   await expect(page.locator('#approval-badge')).toBeHidden();
   await expect(page.locator('#page').getByText('approved', { exact: false }).first()).toBeVisible();
+});
+
+test('canonical navigation counts expose current parser, quarantine and configuration work without notification history', async ({ page }) => {
+  await mockController(page, { navigationCounts: { parsers:{total:3,states:{draft:2,in_review:1}},'parser-workspace':{total:3,states:{draft:2,in_review:1}},'input-paths':{total:2,states:{draft:1,approved:1}},notifications:{total:88} } });
+  await login(page);
+  await expect(page.locator('#nav-count-parsers')).toHaveText('3');
+  await expect(page.locator('#nav-count-parser-workspace')).toHaveText('3');
+  await expect(page.locator('#nav-count-input-paths')).toHaveText('2');
+  await expect(page.locator('#nav-count-quarantine-wizard')).toHaveText('1');
+  await expect(page.locator('[data-nav-count="notifications"]')).toHaveCount(0);
+  await expect(page.locator('#nav-count-kv')).toBeHidden();
+});
+
+test('Parser Catalog isolates a blocked legacy parser and offers an explicit repair draft transition', async ({ page }) => {
+  const mock=await mockController(page,{managedParsers:[{id:'legacy-broken',revision:9,state:'published',created_by:'legacy-import',payload:{name:'Legacy broken',version:'0.9.0',priority:10,rules:[]},runtime_sync:{status:'blocked',reason:'legacy parser rules are incompatible with the current runtime'}}]});
+  await login(page);
+  await page.getByTestId('nav-parsers').click();
+  await expect(page.locator('#page')).toContainText('legacy parser rules are incompatible');
+  await expect(page.getByRole('button',{name:'Repair as draft'})).toBeVisible();
+  await page.getByRole('button',{name:'Repair as draft'}).click();
+  await expect.poll(()=>mock.observed).toContain('POST /api/v1/parser-packs/legacy-broken/repair');
+  await expect(page.locator('#page')).toContainText('not_published');
 });
 
 test('draft input profiles expose lifecycle actions and JSON without a dead rollout button', async ({ page }) => {

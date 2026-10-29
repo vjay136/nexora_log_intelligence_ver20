@@ -2,18 +2,22 @@
 
 Updated: 2026-10-29
 
-## Release 20.0.0-1 candidate
+## Release 20.0.0-2 candidate
 
-Ver20 is derived from the latest Ver19 Release 8 source. It adds the complete
-guided quarantine lifecycle, exact parser-bundle approval, fleet-safe live
-synchronization, TLS hardening, and per-source processing progress while
-preserving the ordinary record hot path.
+Release 2 reconciles valid parser records created by earlier releases, isolates
+malformed records without taking the controller APIs offline, and automatically
+restores the previous catalog and materialized bundle if an approval proposal
+cannot be persisted. The quarantine workflow now gives one state-derived path
+through independent review, exact-bundle rollout, origin acknowledgement,
+targeted replay, verification, rollback, and offboarding.
 
 ## Verified in the integrated source tree
 
 - Full Go suite: PASS.
 - Go vet: PASS.
-- Browser UI suite: PASS, 62/62 Chromium scenarios.
+- Browser UI suite: PASS, 64/64 Chromium scenarios across every primary workspace and visible subtab.
+- Hosted WebApp contracts: PASS, 24/24; standalone and Vite production builds pass.
+- Linux race detector: PASS across all Go packages.
 - Hosted WebApp contracts: PASS, 24/24 Node scenarios.
 - Release static/source checks: PASS.
 - Parser approval preserves and validates the exact stored bundle bytes and
@@ -42,4 +46,4 @@ upgrade/rollback, and multi-node TLS gates. Deployment-specific throughput and
 destination acceptance remain operator evidence and are not inferred from UI
 or unit tests.
 
-Status: **source candidate verified; publication evidence pending tag CI**.
+Status: **Release 2 source candidate verified; publication evidence pending tag CI**.

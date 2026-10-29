@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       previous_release_tag:
-        description: 'Optional Ver19 release tag containing genuine previous client/controller RPMs; defaults to v19.0.0-8'
+        description: 'Optional previous Ver20 release tag containing genuine client/controller RPMs; defaults to v20.0.0-1'
         required: false
         type: string
 
@@ -70,8 +70,8 @@ jobs:
       - name: Download genuine previous release RPMs
         env:
           GH_TOKEN: ${{ github.token }}
-          PREVIOUS_RELEASE_TAG: ${{ inputs.previous_release_tag || 'v19.0.0-8' }}
-          PREVIOUS_RELEASE_REPO: vjay136/nexora_log_intelligence_ver19
+          PREVIOUS_RELEASE_TAG: ${{ inputs.previous_release_tag || 'v20.0.0-1' }}
+          PREVIOUS_RELEASE_REPO: vjay136/nexora_log_intelligence_ver20
         run: |
           mkdir -p '${{ runner.temp }}/previous'
           previous_release_tag="$PREVIOUS_RELEASE_TAG"
@@ -81,7 +81,7 @@ jobs:
               --jq 'map(select(.isDraft == false and .isPrerelease == false)) | sort_by(.publishedAt) | reverse | .[0].tagName')
           fi
           if [[ -z "$previous_release_tag" || "$previous_release_tag" == "null" ]]; then
-            echo "No published Ver19 release is available in $PREVIOUS_RELEASE_REPO" >&2
+            echo "No published previous Ver20 release is available in $PREVIOUS_RELEASE_REPO" >&2
             exit 1
           fi
           echo "Using previous lifecycle baseline $PREVIOUS_RELEASE_REPO@$previous_release_tag"

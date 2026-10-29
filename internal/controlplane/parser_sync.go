@@ -63,21 +63,27 @@ func (s *Server) buildActiveParserBundle(ctx context.Context) (parserAssetBundle
 			}
 			var payload map[string]any
 			if err := json.Unmarshal(doc.Payload, &payload); err != nil {
+				// A malformed parser record from an older release must not take the
+				// entire fleet bundle offline. It remains visible as blocked in the
+				// catalog and cannot be republished until corrected.
+				if collection == "parser-packs" {
+					continue
+				}
 				return bundle, fmt.Errorf("invalid active parser asset %s/%s", collection, doc.ID)
 			}
 			if collection == "parser-packs" {
-				// Assurance candidates are not runtime packs. Only the publish action
-				// writes this strict, sealed ParserPack after independent approval.
-				runtimePack, ok := payload["runtime_pack"]
-				if !ok || payload["review_state"] != "published" {
+				// Reconcile both current Assurance envelopes and valid parser packs
+				// imported from older NLI releases. Invalid stale records are isolated
+				// and exposed as blocked by the catalog API instead of breaking sync.
+				pack, encoded, compatibilityErr := runtimeParserPackForDocument(doc)
+				if compatibilityErr != nil {
 					continue
-				}
-				encoded, err := json.Marshal(runtimePack)
-				if err != nil {
-					return bundle, fmt.Errorf("invalid published runtime parser %s", doc.ID)
 				}
 				digest := sha256.Sum256(encoded)
 				name, _ := payload["name"].(string)
+				if name == "" {
+					name = pack.ID
+				}
 				bundle.Assets = append(bundle.Assets, parserBundleAsset{AssetClass: collection, AssetID: doc.ID, Name: name, Revision: doc.Revision, SHA256: hex.EncodeToString(digest[:]), Payload: encoded})
 				continue
 			}

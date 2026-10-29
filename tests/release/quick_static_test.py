@@ -133,13 +133,13 @@ if "REQUIRE_PREVIOUS=0" in workflow:
 
 rocky_validation = (root / "tests/rocky/validate.sh").read_text(encoding="utf-8")
 for marker in (
-    "previous client must be a genuine Ver19 RPM",
-    "previous controller must be a genuine Ver19 RPM",
+    "previous client must be a genuine earlier Ver20 RPM",
+    "previous controller must be a genuine earlier Ver20 RPM",
 ):
     if marker not in rocky_validation:
         fail(f"Rocky lifecycle validation is missing previous-release gate {marker!r}")
-if "genuine earlier V20 RPM" in rocky_validation:
-    fail("Rocky lifecycle validation incorrectly expects a prior Ver20 package for the initial Ver20 release")
+if "PREVIOUS_RELEASE_REPO: vjay136/nexora_log_intelligence_ver20" not in workflow:
+    fail("Release 2 lifecycle validation does not use the published Ver20 Release 1 baseline")
 
 research_ledger = (root / "docs/V20_RESEARCH_AND_LICENSE_LEDGER.md").read_text(encoding="utf-8")
 if "| **Total** | **100** |" not in research_ledger:
