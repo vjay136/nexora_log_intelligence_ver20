@@ -1,8 +1,8 @@
-# Nexora Log Intelligence Ver19
+# Nexora Log Intelligence Ver20
 
-Nexora Log Intelligence Ver19 is a deterministic, review-gated log parsing and fleet-control platform for x86_64 RHEL/Rocky Linux 8, 9, and 10. It combines a managed client, a central controller, an authenticated WebView/webapp, Supabase-backed control metadata, private file storage for approved workflows, and optional AI-assisted parser proposals.
+Nexora Log Intelligence Ver20 is a deterministic, review-gated log parsing and fleet-control platform for x86_64 RHEL/Rocky Linux 8, 9, and 10. It combines a managed client, a central controller, an authenticated WebView/webapp, Supabase-backed control metadata, private file storage for approved workflows, and optional AI-assisted parser proposals.
 
-> Install from the single versioned release archive in a fresh directory. Verify its external `.sha256` file and the complete internal `SHA256SUMS`; never mix loose files from different V19 releases.
+> Install from the single versioned release archive in a fresh directory. Verify its external `.sha256` file and the complete internal `SHA256SUMS`; never mix loose files from different V20 releases.
 
 ## V18 upgrade baseline architecture
 
@@ -10,9 +10,9 @@ Nexora Log Intelligence Ver19 is a deterministic, review-gated log parsing and f
 
 The V18 architecture SVG is retained as the upgrade baseline reference. Its 8K PNG is included for presentations and offline documentation.
 
-## Ver19 NUPIRE and EGPE
+## Ver20 NUPIRE and EGPE
 
-Ver19 adds the Nexora Universal Parser Intelligence and Runtime Evolution
+Ver20 adds the Nexora Universal Parser Intelligence and Runtime Evolution
 (NUPIRE) control plane and its evidence-gated parser evolution workflow. It
 discovers bounded structural hypotheses, compiles declarative parser artifacts,
 evaluates them against disjoint held-out evidence, and records shadow, approval,
@@ -22,11 +22,11 @@ the existing independently approved, signed rollout mechanism.
 
 The controller exposes authenticated NUPIRE APIs and the WebView contains a
 dedicated NUPIRE/EGPE workspace backed by persisted controller state. Empty or
-unavailable measurements remain explicit. See the [NUPIRE architecture](docs/V19_NUPIRE_ARCHITECTURE.md),
-[baseline gap audit](docs/V19_BASELINE_CAPABILITY_GAP.md), and
-[research ledger](docs/V19_RESEARCH_AND_LICENSE_LEDGER.md).
+unavailable measurements remain explicit. See the [NUPIRE architecture](docs/V20_NUPIRE_ARCHITECTURE.md),
+[baseline gap audit](docs/V20_BASELINE_CAPABILITY_GAP.md), and
+[research ledger](docs/V20_RESEARCH_AND_LICENSE_LEDGER.md).
 
-Release `19.0.0-8` completes the Quarantine Resolution Wizard after candidate
+Release `20.0.0-1` completes the Quarantine Resolution Wizard after candidate
 generation. Test, review, publish, origin or fleet-wide rollout proposal,
 independent rollout approval, exact client acknowledgement, replay,
 verification, rollback, and offboarding controls now remain in one guided
@@ -35,11 +35,11 @@ Parser delivery snapshots the exact canonical bundle, rejects stale proposals,
 and never enables replay until the target reports the same desired and active
 hash with applied status. All eligible-client publication and removal remain
 independently approved and auditable.
-See the [UPES/GPRS architecture and acceptance guide](docs/V19_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md)
-the [Quarantine Resolution Wizard guide](docs/V19_QUARANTINE_RESOLUTION_WIZARD.md),
-and the [architecture diagram](docs/architecture/NLI_V19_UPES_GPRS_ARCHITECTURE.svg).
+See the [UPES/GPRS architecture and acceptance guide](docs/V20_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md)
+the [Quarantine Resolution Wizard guide](docs/V20_QUARANTINE_RESOLUTION_WIZARD.md),
+and the [architecture diagram](docs/architecture/NLI_V20_UPES_GPRS_ARCHITECTURE.svg).
 
-## V18 baseline capabilities retained in Ver19
+## Ver19 capabilities retained in Ver20
 
 - Reviewed first-tier ParserPacks for IMAP, POP, MTA, SMTP-IN, SMTP-OUT, WebTop/Webmail, PSS/PABD, and MSS/CAPD, derived from the supplied working Alloy/Vector parser sources.
 - A versioned catalog for known keys, delimiter rules, static layouts, regex, templates, projections, field mappings, semantic extraction, and bounded generic fallback.
@@ -53,7 +53,7 @@ and the [architecture diagram](docs/architecture/NLI_V19_UPES_GPRS_ARCHITECTURE.
 - Fleet, controller, and client management with node identity, heartbeat age, service state, configured inputs, selected outputs, parser/config revisions, resource telemetry, command leases, results, and audit.
 - Family-isolated parsed JSON and quarantine files for ten default inputs, plus simultaneous fan-out to Grafana Loki and ClickHouse with independent batching, retry, and local failure receipts. Authenticated bounded parser telemetry flows separately to the controller for live dashboards. Exact quarantined source records remain in the durable client queue and may be uploaded only when the operator enables bounded raw retention.
 - Pre-parse `default`, `filtered`, and `hybrid` selection by exact event name, service, and hostname, including reviewed presets for ImapDisconnected, AcctBadPswd, auth.loginByToken, MtaRequestingDomainTableUpdate, CARDDAV, and SieveRuleMsg.
-- x86_64 client and controller RPMs, one-use private-CA enrollment, fresh-install packaging and V18-to-V19 upgrade/rollback acceptance gates (requiring genuine V18 RPMs), WebView/webapp archives, uninstall scripts, SBOM, provenance, and reproducible build checks. Historical V8/V10/V12/V14 packages remain accepted by the migration matrix.
+- x86_64 client and controller RPMs, one-use private-CA enrollment, fresh-install packaging and Ver19-to-Ver20 upgrade/rollback acceptance gates (requiring genuine Ver19 release 8 RPMs), WebView/webapp archives, uninstall scripts, SBOM, provenance, and reproducible build checks. Historical V8/V10/V12/V14 packages remain represented in the migration corpus.
 
 ## Accuracy contract
 
@@ -81,16 +81,16 @@ File buckets are private. Browsers never receive `SUPABASE_SECRET_KEY`, object p
 
 The publishable key is used only for the protected metadata RPC contract. Server-side private Storage requires a dedicated `sb_secret_...` key in the root-owned controller environment; it must never be committed, sent to Vercel, copied to a client RPM, or placed in a `NEXT_PUBLIC_` variable.
 
-## V18 upgrade and rollback
+## Ver19 upgrade and rollback
 
-Ver19 keeps the RPM package identities, systemd units, `/etc/nli` configuration, and `/var/lib/nli` state paths used by Ver18 so RPM can perform an in-place upgrade while retaining configuration and state paths. The V18-to-V19 lifecycle still requires release acceptance. Use the Ver19 bundle installer and retain the exact Ver18 client and controller RPMs until the post-upgrade checks pass. The rollback procedure and data-preservation limits are recorded in [the migration and rollback note](docs/release/V19_MIGRATION_AND_ROLLBACK.md).
+Ver20 keeps the RPM package identities, systemd units, `/etc/nli` configuration, and `/var/lib/nli` state paths used by Ver19 so RPM can perform an in-place upgrade while retaining configuration and state paths. The Ver19-to-Ver20 lifecycle still requires release acceptance. Use the Ver20 bundle installer and retain the exact Ver19 release 8 client and controller RPMs until the post-upgrade checks pass. The rollback procedure and data-preservation limits are recorded in [the migration and rollback note](docs/release/V20_MIGRATION_AND_ROLLBACK.md).
 
 ## Installation
 
 On the Rocky/RHEL controller, the lowest-interaction path is:
 
 ```bash
-sudo bash install-controller-ver19.sh --automatic
+sudo bash install-controller-ver20.sh --automatic
 ```
 
 This discovers private/public AWS and host identities, persists generated secrets in root-owned files, creates TLS material, configures the listener/firewall, and prints concrete diagnostics. Run without `--automatic` to choose private-network TLS, public Nginx/ACME, Cloudflare Tunnel, a corporate certificate, or an existing public HTTPS proxy. The installer creates a root-only, one-use `/root/nli-client-bootstrap.env` and a recoverable root-only `/root/nli-controller-credentials.env`; it does not print secret values to the terminal.
@@ -98,7 +98,7 @@ This discovers private/public AWS and host identities, persists generated secret
 On each client, provision all reviewed families and standard paths with:
 
 ```bash
-sudo bash install-client-ver19.sh --all-log-files
+sudo bash install-client-ver20.sh --all-log-files
 ```
 
 The interactive installer remains available for custom log paths, parser families, event/service/hostname selection, and destinations. Enter `automatic` for both paths and parser families to create and verify one reviewed sample path for every bundled parser. For each additional client, first create a new one-use enrollment file on the controller:
@@ -110,33 +110,33 @@ sudo nli-controller-setup --rotate-enrollment
 Use the separate uninstall scripts when required:
 
 ```bash
-sudo bash uninstall-client-ver19.sh
-sudo bash uninstall-controller-ver19.sh
+sudo bash uninstall-client-ver20.sh
+sudo bash uninstall-controller-ver20.sh
 ```
 
 See [INSTALLATION_AND_CONFIGURATION.md](docs/INSTALLATION_AND_CONFIGURATION.md) for VMware/MobaXterm steps, connectivity checks, Vercel/Cloudflare configuration, Supabase bootstrap, upgrades, and optional purge behavior.
 
 For the two-node AWS Red Hat path, use
-[V19_AWS_RED_HAT_INSTALLATION.md](docs/V19_AWS_RED_HAT_INSTALLATION.md). The
+[V20_AWS_RED_HAT_INSTALLATION.md](docs/V20_AWS_RED_HAT_INSTALLATION.md). The
 single additive controller command that installs private VPC TLS and then
 starts a named Cloudflare Tunnel is:
 
 ```bash
-sudo bash install-controller-aws-cloudflare-ver19.sh \
-  --rpm ./nli_controller_agent_ver19.rpm \
+sudo bash install-controller-aws-cloudflare-ver20.sh \
+  --rpm ./nli_controller_agent_ver20.rpm \
   --private-endpoint 10.20.1.10 \
   --public-hostname nli-controller.example.com \
   --tunnel-token-file /root/cloudflare-tunnel-token.txt
 ```
 
-See [V19_CLOUDFLARE_TUNNEL.md](docs/V19_CLOUDFLARE_TUNNEL.md),
+See [V20_CLOUDFLARE_TUNNEL.md](docs/V20_CLOUDFLARE_TUNNEL.md),
 [VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md), and
 [CLOUDFLARE_PAGES_DEPLOYMENT.md](docs/CLOUDFLARE_PAGES_DEPLOYMENT.md) for the
 two supported hosted WebApp paths.
 
 See [WEBAPP_OPERATOR_AND_PARSER_GUIDE.md](docs/WEBAPP_OPERATOR_AND_PARSER_GUIDE.md) for the complete WebApp exercise: Assurance samples, parser and policy drafts, editing, independent approval, publication, fleet verification, retry, deletion limits, users/RBAC, and controller/client operations.
 
-See [V19 support matrix](docs/V19_SUPPORT_MATRIX.md) for tested platform and hosting scope, and [V19 engineering audit](docs/V19_ENGINEERING_AUDIT.md) for evidence, release claims, provenance, and known limits.
+See [V20 support matrix](docs/V20_SUPPORT_MATRIX.md) for tested platform and hosting scope, and [V20 engineering audit](docs/V20_ENGINEERING_AUDIT.md) for evidence, release claims, provenance, and known limits.
 
 ## WebView and hosted webapp
 
@@ -177,7 +177,7 @@ docs/                 Architecture, release, and operating documentation
 
 ## Repository
 
-<https://github.com/vjay136/nexora_log_intelligence_ver19.git>
+<https://github.com/vjay136/nexora_log_intelligence_ver20.git>
 
 ## License
 

@@ -1,4 +1,4 @@
-# NLI V19 client parser catalog
+# NLI V20 client parser catalog
 
 The client RPM bundles these eight reviewed ParserPacks in its parser catalog.
 The runtime embeds and enables all eight by default; selecting a family on an

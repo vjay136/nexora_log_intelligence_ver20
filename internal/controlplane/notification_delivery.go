@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"nexora.local/nli-v19/internal/auditlog"
-	metastore "nexora.local/nli-v19/internal/store"
+	"nexora.local/nli-v20/internal/auditlog"
+	metastore "nexora.local/nli-v20/internal/store"
 )
 
 const notificationAttemptLimit = 3

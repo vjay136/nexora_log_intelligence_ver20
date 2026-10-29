@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"nexora.local/nli-v19/internal/migration"
-	parserpolicy "nexora.local/nli-v19/parser-policy"
+	"nexora.local/nli-v20/internal/migration"
+	parserpolicy "nexora.local/nli-v20/parser-policy"
 )
 
 type regressionFile struct {

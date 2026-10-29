@@ -1,8 +1,8 @@
-# NLI v19 release infrastructure
+# NLI v20 release infrastructure
 
-## Release 19.0.0-8
+## Release 20.0.0-1
 
-Release 8 completes quarantine recovery after candidate generation. The
+Release 1 completes quarantine recovery after candidate generation. The
 Quarantine Resolution Wizard now duplicates the canonical Test, Review,
 Publish, scoped Fleet Sync, rollout approval, exact acknowledgement, replay,
 verification, rollback, and offboarding controls in one workspace. Its next
@@ -22,24 +22,24 @@ applied status all match the current bundle.
 The release gate exercises representative structured and unstructured records,
 exact normalized/quarantine accounting, all primary workspaces and visible
 inner tabs, the real controller APIs, reproducible RPM creation, and Rocky 9
-and Rocky 10.2 upgrade lifecycles. See `V19_R8_TEST_RESULTS.md` in the release
+and Rocky 10.2 upgrade lifecycles. See `V20_R1_TEST_RESULTS.md` in the release
 archive for the verified commands, sample classes, and results.
-See `V19_QUARANTINE_RESOLUTION_WIZARD.md` for the operator workflow, exact
+See `V20_QUARANTINE_RESOLUTION_WIZARD.md` for the operator workflow, exact
 unstructured fixture, data boundaries, deployment checks, and rollback path.
 
-### Operator acceptance for release 8
+### Operator acceptance for release 1
 
-1. Upgrade both controller and clients to `19.0.0-8`; confirm the Monitoring → Pipeline VALIDATE row shows measured attempt/pass/failure rates.
+1. Upgrade both controller and clients to `20.0.0-1`; confirm the Monitoring → Pipeline VALIDATE row shows measured attempt/pass/failure rates.
 2. Put representative JSON, key/value, syslog, delimiter, positional, multiline, and deliberately unstructured records into a clean input. Confirm `read = normalized + quarantined` and that restart does not duplicate output.
 3. Open Quarantine Resolution Wizard for a retained quarantine record. Complete evidence, mapping, preview, candidate generation, independent parser review, publication, origin and all-eligible rollout proposals, independent rollout approval, exact client acknowledgement, replay, verification, rollback, and offboarding checks without leaving the guided workflow.
 4. Confirm the proposal creator cannot approve their own rollout, a stale bundle proposal is rejected, and replay remains disabled until the origin reports the exact applied bundle.
 
-## Previous release: 19.0.0-7
+## Ver19 baseline: 19.0.0-8
 
-Release 7 added authoritative validation telemetry, non-empty NUPIRE/EGPE
+The Ver19 baseline added authoritative validation telemetry, non-empty NUPIRE/EGPE
 rendering, and the nine-stage field-mapping and candidate-generation wizard.
 
-## Previous release: 19.0.0-6
+## Ver19 capability history
 
 Release 6 adds bounded UPES failure-signature aggregation and the Guided Parser
 Repair Studio (GPRS) candidate checksum, withdrawal, independent-review,
@@ -49,8 +49,8 @@ queue is not a durable or distributed queue. The GPRS-labelled candidate
 workflow does not bypass the established signed bundle rollout, independent
 rollout approval, client verification, or applied-hash acknowledgement.
 
-See [the UPES/GPRS architecture and acceptance guide](../V19_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md)
-and its [architecture diagram](../architecture/NLI_V19_UPES_GPRS_ARCHITECTURE.svg)
+See [the UPES/GPRS architecture and acceptance guide](../V20_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md)
+and its [architecture diagram](../architecture/NLI_V20_UPES_GPRS_ARCHITECTURE.svg)
 for detailed boundaries and reproducible checks. These notes do not claim
 release acceptance or production qualification.
 
@@ -60,7 +60,7 @@ release acceptance or production qualification.
 2. Create, validate, submit, independently approve, publish, withdraw, and roll back synthetic Assurance parser candidates. Verify checksum mismatch rejection at approval and publication.
 3. Confirm publication and rollback update the desired parser bundle only through the normal signed rollout and independent approval path, then verify client bundle-hash acknowledgement before declaring applied state.
 
-## Previous release: 19.0.0-5
+## Ver19 retained history and input-path lifecycle
 
 Release 5 makes the input-path approval stages explicit: a profile must be
 submitted, independently approved, and published before it can be proposed
@@ -91,7 +91,7 @@ acceptance, production capacity, or completed deployment qualification.
 3. Check `GET /api/v1/rollouts` before and after approval. `pending_approval_count` must decrease while the approved proposal remains in history. Verify the audit log identifies the author and independent approver.
 4. Compare dashboard canonical minute totals with client counter deltas over the same interval. Refresh or restart the controller and confirm aggregate buckets persist. Treat bounded metadata series and current heartbeat samples as separate, non-durable measurements.
 
-## Previous release: 19.0.0-4
+## Ver19 ingestion and timeline foundation
 
 Release 4 removes the avoidable final-row delay for line-oriented `auto` input while retaining explicit Java, Python, and Go stack-trace grouping and exactly-once restart checkpoints. It adds retained, bounded aggregate buckets for Overall Timeline History and lets operators add, edit, remove, validate, and independently approve rollouts containing one or many input paths. The UI keeps open controls mounted while canonical telemetry continues in the background.
 
@@ -106,7 +106,7 @@ The release tests validate counter safety and bucket representation at a simulat
 
 Capture screenshots of the 49/49 output, approved/applied input revision, selected dropdown during live updates, and timeline bucket details for the deployment record. Do not interpret absent destination acknowledgement as successful remote delivery.
 
-## Previous release: 19.0.0-3
+## Ver19 exact-output and recovery foundation
 
 This release fixes the reported duplicate-output and continuously increasing-count defect. The client now checkpoints every completed input prefix before a pending multiline record, makes durable local output authoritative before optional telemetry delivery, avoids replay after optional Loki, ClickHouse, or controller telemetry failures, and creates family output files only when that family receives a record.
 
@@ -116,16 +116,16 @@ The release also adds an audited quarantine recovery workflow from evidence revi
 
 Operational additions include queued SMTP and PagerDuty notifications, persistent delivery history, a live Client → Controller → WebApp communication-status view, stable background synchronization, browser branding, corrected timestamps, and explicit subsystem names and execution order for NHLE, NURSF, NAPI, NAL, NUPIRE, and EGPE.
 
-Use `V19_PRODUCTION_ACCEPTANCE_TESTS.md` for the exact 49-record acceptance test and `V19_OPERATOR_DEMO_GUIDE.md` for the complete tab-by-tab demonstration. `V19_SUBSYSTEM_ORCHESTRATION.md` explains which subsystems run on ordinary traffic and which run only during evidence-gated recovery.
+Use `V20_PRODUCTION_ACCEPTANCE_TESTS.md` for the exact 49-record acceptance test and `V20_OPERATOR_DEMO_GUIDE.md` for the complete tab-by-tab demonstration. `V20_SUBSYSTEM_ORCHESTRATION.md` explains which subsystems run on ordinary traffic and which run only during evidence-gated recovery.
 
-This directory documents the supported V19 release path. It builds source-derived static Linux binaries in a digest-pinned Go image, creates genuine RPMs with `rpmbuild` in a digest-pinned Rocky image, performs a two-pass byte-for-byte reproducibility check, and emits checksums, SPDX SBOM, release manifest, binary provenance, and an in-toto/SLSA provenance statement.
+This directory documents the supported V20 release path. It builds source-derived static Linux binaries in a digest-pinned Go image, creates genuine RPMs with `rpmbuild` in a digest-pinned Rocky image, performs a two-pass byte-for-byte reproducibility check, and emits checksums, SPDX SBOM, release manifest, binary provenance, and an in-toto/SLSA provenance statement.
 
 ## Safety and prerequisites
 
 - Release input must be one clean, committed, frozen Git revision. Dirty or untracked source is refused.
 - Outputs go to `NLI_BUILD_SCRATCH` or an explicit output directory; the repository `dist` directory is never used.
-- `nli_clinet_ver19.rpm` is a byte-identical filename alias of `nli_client_ver19.rpm`. Both contain the same `nli-client` NEVRA and must not be treated as separate packages.
-- Upgrade acceptance uses genuine client and controller RPMs from the latest published V19 release. The lifecycle gate requires an earlier RPM release number, then proves upgrade, rollback, re-upgrade, restart, state preservation, and uninstall behavior on Rocky Linux 9 and Rocky Linux 10.2.
+- `nli_clinet_ver20.rpm` is a byte-identical filename alias of `nli_client_ver20.rpm`. Both contain the same `nli-client` NEVRA and must not be treated as separate packages.
+- Upgrade acceptance uses genuine Ver19 Release 8 client and controller RPMs as the previous-major baseline, then proves upgrade, rollback, re-upgrade, restart, state preservation, and uninstall behavior on Rocky Linux 9 and Rocky Linux 10.2.
 - The release remains unsigned unless an explicit signing key is supplied. Unsigned output must never be described as signed.
 - Operators receive one `nli-v<version>-<release>-x86_64.tar.gz` archive plus its external `.sha256`. The archive contains `RELEASE_ID`, all RPM/web/operator artifacts, and the complete internal checksum manifest. It must be extracted into a fresh versioned directory.
 
@@ -137,9 +137,9 @@ make release-static
 make release-package-test
 make release-lifecycle-test
 make release-preflight
-make release-build OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v19-release"
+make release-build OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v20-release"
 make release-rocky \
-  OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v19-release" \
+  OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v20-release" \
   PREVIOUS_DIR=/absolute/path/to/genuine/previous-rpms
 ```
 
@@ -147,7 +147,7 @@ Windows PowerShell uses the same pinned two-pass build:
 
 ```powershell
 $env:NLI_BUILD_SCRATCH = 'C:\absolute\session-owned\scratch'
-.\packaging\build-release.ps1 -OutputDirectory "$env:NLI_BUILD_SCRATCH\nli-v19-release"
+.\packaging\build-release.ps1 -OutputDirectory "$env:NLI_BUILD_SCRATCH\nli-v20-release"
 ```
 
 ## Signing hooks
@@ -156,10 +156,10 @@ Unsigned reproducibility is checked before signing because signatures intentiona
 
 ```bash
 REQUIRE_SIGNATURES=1 RPM_GPG_NAME='NLI Release' \
-  make release-sign-rpm OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v19-release"
-make release-evidence OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v19-release"
+  make release-sign-rpm OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v20-release"
+make release-evidence OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v20-release"
 REQUIRE_SIGNATURES=1 COSIGN_KEY=... \
-  make release-sign OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v19-release"
+  make release-sign OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v20-release"
 ```
 
 To use GPG detached signatures instead, set `GPG_KEY_ID`. Private keys are never read from the repository and are not mounted by the default build.
@@ -168,7 +168,7 @@ Verify promotion signatures with an explicit trust root:
 
 ```bash
 COSIGN_PUBLIC_KEY=/absolute/path/to/cosign.pub \
-  make release-sign-verify OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v19-release"
+  make release-sign-verify OUTPUT_DIR="$NLI_BUILD_SCRATCH/nli-v20-release"
 ```
 
 ## Rocky acceptance
@@ -187,7 +187,7 @@ COSIGN_PUBLIC_KEY=/absolute/path/to/cosign.pub \
 A final release run must wait until other writers stop and one integrated revision is frozen. That revision must provide:
 
 1. compiling and passing Go source, vet, race, and fuzz gates;
-2. runtime binaries reporting `19.0.0` with clean `nexora.local/nli-v19` VCS provenance;
+2. runtime binaries reporting `20.0.0` with clean `nexora.local/nli-v20` VCS provenance;
 3. exact SMTP CLI output matching `tests/release/smtp_expected.json`;
 4. a complete WebView without stale `0.4.0`, `v1.0.0`, or `webview_ver1` identifiers;
 5. no disabled tests; and

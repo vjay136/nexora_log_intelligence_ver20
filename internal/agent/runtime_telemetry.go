@@ -7,18 +7,24 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/telemetry"
 )
 
 type journalLimiter struct {
 	mu       sync.Mutex
 	last     map[string]time.Time
-	previous map[string]journalCounts
+	previous map[string]journalProgress
 	failed   map[string]bool
 	interval time.Duration
 }
 
-type journalCounts struct{ read, parsed, quarantined uint64 }
+type journalCounts struct{ read, parsed, quarantined, errors, bytes uint64 }
+
+type journalProgress struct {
+	counts journalCounts
+	phase  string
+	logged time.Time
+}
 
 type sampleSet struct {
 	mu    sync.RWMutex
@@ -51,7 +57,7 @@ func (s *sampleSet) snapshot() []telemetry.StreamFileTelemetry {
 }
 
 func newJournal(interval time.Duration) *journalLimiter {
-	return &journalLimiter{last: map[string]time.Time{}, previous: map[string]journalCounts{}, failed: map[string]bool{}, interval: interval}
+	return &journalLimiter{last: map[string]time.Time{}, previous: map[string]journalProgress{}, failed: map[string]bool{}, interval: interval}
 }
 func (j *journalLimiter) event(kind, source, detail string) {
 	key := kind + "\x00" + source
@@ -71,28 +77,52 @@ func (j *journalLimiter) event(kind, source, detail string) {
 	slog.Info("runtime", attrs...)
 }
 
-// progress emits one bounded aggregate per source and interval, keeping journal
-// work proportional to batches rather than input records.
-func (j *journalLimiter) progress(source string, current journalCounts) {
+// progress emits a bounded, cumulative source summary. Counter changes are
+// accumulated until the next interval, while a phase transition is emitted
+// immediately so operators can distinguish active reading from EOF wait.
+func (j *journalLimiter) progress(source, phase string, current journalCounts) {
 	now := time.Now()
 	j.mu.Lock()
-	key := "progress\x00" + source
 	previous := j.previous[source]
-	if last := j.last[key]; !last.IsZero() && now.Sub(last) < j.interval {
+	changed := current != previous.counts
+	phaseChanged := phase != previous.phase
+	idleHeartbeat := 6 * j.interval
+	if idleHeartbeat < time.Minute {
+		idleHeartbeat = time.Minute
+	}
+	if !changed && !phaseChanged && !previous.logged.IsZero() && now.Sub(previous.logged) < idleHeartbeat {
 		j.mu.Unlock()
 		return
 	}
-	j.last[key] = now
-	j.previous[source] = current
+	if changed && !phaseChanged && !previous.logged.IsZero() && now.Sub(previous.logged) < j.interval {
+		j.mu.Unlock()
+		return
+	}
+	j.previous[source] = journalProgress{counts: current, phase: phase, logged: now}
 	j.mu.Unlock()
-	attrs := []any{"source", source, "event", "progress", "read_lines", current.read - previous.read, "parsed", current.parsed - previous.parsed, "quarantined", current.quarantined - previous.quarantined}
+	readDelta := counterDelta(current.read, previous.counts.read)
+	parsedDelta := counterDelta(current.parsed, previous.counts.parsed)
+	quarantinedDelta := counterDelta(current.quarantined, previous.counts.quarantined)
+	errorDelta := counterDelta(current.errors, previous.counts.errors)
+	bytesDelta := counterDelta(current.bytes, previous.counts.bytes)
+	attrs := []any{
+		"source", source, "event", "progress", "phase", phase,
+		"active", phase == "reading", "complete_to_eof", phase == "eof_wait",
+		"read_delta", readDelta, "processed_delta", parsedDelta + quarantinedDelta,
+		"parsed_delta", parsedDelta, "quarantined_delta", quarantinedDelta,
+		"errors_delta", errorDelta, "bytes_delta", bytesDelta,
+		"read_total", current.read, "processed_total", current.parsed + current.quarantined,
+		"parsed_total", current.parsed, "quarantined_total", current.quarantined,
+		"errors_total", current.errors, "bytes_total", current.bytes,
+	}
 	slog.Info("runtime", attrs...)
-	if delta := current.parsed - previous.parsed; delta > 0 {
-		slog.Info("runtime", "source", source, "event", "parsed", "count", delta)
+}
+
+func counterDelta(current, previous uint64) uint64 {
+	if current < previous {
+		return current
 	}
-	if delta := current.quarantined - previous.quarantined; delta > 0 {
-		slog.Info("runtime", "source", source, "event", "quarantined", "count", delta)
-	}
+	return current - previous
 }
 
 func (j *journalLimiter) outputFailure(source, detail string) {

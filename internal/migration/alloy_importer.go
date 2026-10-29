@@ -12,7 +12,7 @@ import (
 	"github.com/grafana/river/ast"
 	riverparser "github.com/grafana/river/parser"
 	"github.com/grafana/river/token"
-	parserpolicy "nexora.local/nli-v19/parser-policy"
+	parserpolicy "nexora.local/nli-v20/parser-policy"
 )
 
 type alloyImporter struct {
@@ -41,7 +41,7 @@ func translateAlloySource(file UploadedFile) MigrationResult {
 	}
 	pack := &parserpolicy.ParserPack{
 		ID:      identifier("alloy_" + strings.TrimSuffix(baseName(file.Name), extension(file.Name))),
-		Version: "19.0.0", Revision: 1, SourceType: "migrated", SourceHash: file.Checksum,
+		Version: "20.0.0", Revision: 1, SourceType: "migrated", SourceHash: file.Checksum,
 		Author: "nli-migrate", ReviewState: parserpolicy.ReviewStateDraft,
 		Rules: importer.generatedRules(), ResourceLimits: parserpolicy.ResourceLimits{
 			MaxInputBytes: 1 << 20, MaxFields: 512, MaxCaptures: 256, MaxRegexLength: 4096,

@@ -1,6 +1,6 @@
 {
-  "name": "nexora-log-intelligence-v19",
-  "version": "19.0.0",
+  "name": "nexora-log-intelligence-v20",
+  "version": "20.0.0",
   "private": true,
   "type": "module",
   "engines": { "node": "24.x" },
@@ -8,12 +8,12 @@
     "build": "node scripts/build-webapp.mjs",
     "build:vite": "npm --prefix web run build",
     "web:export": "node scripts/export-webapp.mjs",
-    "web:check": "node --check web/app.js && node --check web/e2e.spec.js && node --check web/vite.config.js && node --check scripts/export-webapp.mjs && node --check api/v1/[...path].js && node --check \"functions/api/v1/[[path]].js\" && node --check scripts/vercel-preflight.mjs && node --test tests/v19-operator-guide.test.js tests/v19-subsystem-orchestration.test.js tests/web-vite-export.test.js tests/vercel-proxy.test.js tests/vercel-preflight.test.js tests/cloudflare-proxy.test.js tests/cloudflare-tunnel-v19.test.js tests/aws-cloudflare-orchestrator-v19.test.js",
+    "web:check": "node --check web/app.js && node --check web/e2e.spec.js && node --check web/vite.config.js && node --check scripts/export-webapp.mjs && node --check api/v1/[...path].js && node --check \"functions/api/v1/[[path]].js\" && node --check scripts/vercel-preflight.mjs && node --test tests/v20-operator-guide.test.js tests/v20-subsystem-orchestration.test.js tests/web-vite-export.test.js tests/vercel-proxy.test.js tests/vercel-preflight.test.js tests/cloudflare-proxy.test.js tests/cloudflare-tunnel-v20.test.js tests/aws-cloudflare-orchestrator-v20.test.js",
     "web:test": "npm --prefix web run test:e2e",
     "web:test:ui": "npm --prefix web run test:ui",
     "vercel:preflight": "node scripts/vercel-preflight.mjs",
     "vercel:deploy": "vercel deploy --prod",
     "cloudflare:build": "node scripts/build-webapp.mjs",
-    "cloudflare:check": "node --test tests/cloudflare-proxy.test.js tests/cloudflare-tunnel-v19.test.js tests/aws-cloudflare-orchestrator-v19.test.js"
+    "cloudflare:check": "node --test tests/cloudflare-proxy.test.js tests/cloudflare-tunnel-v20.test.js tests/aws-cloudflare-orchestrator-v20.test.js"
   }
 }

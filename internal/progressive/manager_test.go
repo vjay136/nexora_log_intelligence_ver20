@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"nexora.local/nli-v19/internal/protocol"
+	"nexora.local/nli-v20/internal/protocol"
 )
 
 func testNodes(count int) []Node {

@@ -12,13 +12,13 @@ test('Vite source keeps a same-origin API proxy and CSP-compatible local assets'
   assert.match(config, /['"]\/api\/v1['"]\s*:\s*\{\s*target:\s*['"]http:\/\/127\.0\.0\.1:12382/);
   assert.match(html, /type="module" src="\.\/app\.js"/);
   assert.match(headers, /Content-Security-Policy:.*script-src 'self';.*style-src 'self'/);
-  assert.match(html, /nexora-logo-v19\.png/);
+  assert.match(html, /nexora-logo-v20\.png/);
   const css = await readFile(resolve(root, 'web/styles.css'), 'utf8');
-  assert.match(html, /data-banner="login-banner-v19\.png"/);
+  assert.match(html, /data-banner="login-banner-v20\.png"/);
   assert.match(css, /\.login-banner/);
-  await stat(resolve(root, 'web/nexora-logo-v19.png'));
-  await stat(resolve(root, 'web/login-banner-v19.png'));
-  await stat(resolve(root, 'web/nexora-poster-v19.png'));
+  await stat(resolve(root, 'web/nexora-logo-v20.png'));
+  await stat(resolve(root, 'web/login-banner-v20.png'));
+  await stat(resolve(root, 'web/nexora-poster-v20.png'));
 });
 
 test('dashboard chart shows record-count axes and keyboard accessible data points', async () => {
@@ -44,12 +44,12 @@ test('standalone export documents the Vite preset and platform-neutral static/se
   assert.match(exporter, /DEPLOYMENT\.md/);
   assert.match(exporter, /static\/serverless platform/);
   assert.match(exporter, /do not create a second frontend implementation/);
-  for (const asset of ['nexora-logo-v19.png', 'login-banner-v19.png', 'nexora-poster-v19.png']) {
+  for (const asset of ['nexora-logo-v20.png', 'login-banner-v20.png', 'nexora-poster-v20.png']) {
     assert.ok(exporter.includes(asset), `standalone WebApp export omits ${asset}`);
     assert.ok((await readFile(resolve(root, 'scripts/build-webapp.mjs'), 'utf8')).includes(asset), `static WebApp export omits ${asset}`);
     assert.ok((await readFile(resolve(root, 'scripts/release/build-webapp.py'), 'utf8')).includes(asset), `release WebApp archive omits ${asset}`);
   }
-  assert.match(await readFile(resolve(root, 'web/package.json'), 'utf8'), /copy-v19-brand-assets\.mjs/);
-  assert.match(exporter, /copy-v19-brand-assets\.mjs/, 'standalone export must include its Vite brand-copy helper');
-  assert.match(await readFile(resolve(root, 'scripts/release/build-webapp.py'), 'utf8'), /scripts\/copy-v19-brand-assets\.mjs/, 'release archive must include its Vite brand-copy helper');
+  assert.match(await readFile(resolve(root, 'web/package.json'), 'utf8'), /copy-v20-brand-assets\.mjs/);
+  assert.match(exporter, /copy-v20-brand-assets\.mjs/, 'standalone export must include its Vite brand-copy helper');
+  assert.match(await readFile(resolve(root, 'scripts/release/build-webapp.py'), 'utf8'), /scripts\/copy-v20-brand-assets\.mjs/, 'release archive must include its Vite brand-copy helper');
 });

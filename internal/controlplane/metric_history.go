@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/telemetry"
 )
 
 // Keep a decade of minute aggregates so year and all-time dashboards survive

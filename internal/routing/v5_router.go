@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"nexora.local/nli-v19/internal/output"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/output"
+	"nexora.local/nli-v20/telemetry"
 )
 
 type V5Router struct {

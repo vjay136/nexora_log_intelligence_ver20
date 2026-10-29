@@ -13,7 +13,7 @@ test('Cloudflare proxy forwards same-origin auth headers to a public controller 
   let observed;
   globalThis.fetch = async (url, options) => {
     observed = { url: String(url), options };
-    return new Response(JSON.stringify({ service: 'nli-controller-agent' }), { status: 200, headers: { 'content-type': 'application/json', 'x-nli-controller': 'v19' } });
+    return new Response(JSON.stringify({ service: 'nli-controller-agent' }), { status: 200, headers: { 'content-type': 'application/json', 'x-nli-controller': 'v20' } });
   };
   t.after(() => { globalThis.fetch = originalFetch; });
   const response = await onRequest({ request: new Request('https://app.example.com/api/v1/system?detail=1', { headers: { cookie: 'nli_session=test', 'x-csrf-token': 'csrf', authorization: 'Bearer caller-token' } }), env: { NLI_CONTROLLER_ORIGIN: 'https://controller.example.com:8443' } });
@@ -23,7 +23,7 @@ test('Cloudflare proxy forwards same-origin auth headers to a public controller 
   assert.equal(observed.options.headers.get('x-csrf-token'), 'csrf');
   assert.equal(observed.options.headers.get('authorization'), 'Bearer caller-token');
   assert.equal(observed.options.headers.get('x-nli-proxy'), 'cloudflare-pages');
-  assert.equal(response.headers.get('x-nli-controller'), 'v19');
+  assert.equal(response.headers.get('x-nli-controller'), 'v20');
   assert.equal(response.headers.get('cache-control'), 'no-store');
 });
 

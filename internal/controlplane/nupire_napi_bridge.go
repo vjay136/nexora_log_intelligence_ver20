@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"nexora.local/nli-v19/internal/nupire"
+	"nexora.local/nli-v20/internal/nupire"
 )
 
 // registerNAPICandidate binds the already-tested NAPI draft to the persistent

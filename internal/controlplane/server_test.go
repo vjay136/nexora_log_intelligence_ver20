@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"nexora.local/nli-v19/internal/eventstore"
-	metastore "nexora.local/nli-v19/internal/store"
+	"nexora.local/nli-v20/internal/eventstore"
+	metastore "nexora.local/nli-v20/internal/store"
 )
 
 type apiFixture struct {
@@ -587,7 +587,7 @@ func TestNodeStateDriftIsAuthenticated(t *testing.T) {
 
 func TestNodeParserTelemetryIsAuthenticatedAndVisibleToWebApp(t *testing.T) {
 	f := newAPIFixture(t)
-	registration := map[string]any{"id": "telemetry-node", "hostname": "mail-host", "os": "linux", "arch": "x86_64", "version": "19.0.0", "config_hash": strings.Repeat("a", 64)}
+	registration := map[string]any{"id": "telemetry-node", "hostname": "mail-host", "os": "linux", "arch": "x86_64", "version": "20.0.0", "config_hash": strings.Repeat("a", 64)}
 	encoded, _ := json.Marshal(registration)
 	request, _ := http.NewRequest(http.MethodPost, f.http.URL+"/api/v1/node/register", bytes.NewReader(encoded))
 	request.Header.Set("Content-Type", "application/json")
@@ -683,7 +683,7 @@ func TestControllerIdentityAndLoginPreflight(t *testing.T) {
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("health status=%d body=%s", response.StatusCode, data)
 	}
-	if response.Header.Get("X-NLI-Controller") != "v19" {
+	if response.Header.Get("X-NLI-Controller") != "v20" {
 		t.Fatalf("health controller identity=%q", response.Header.Get("X-NLI-Controller"))
 	}
 	if response.Header.Get("Cache-Control") != "no-store" {
@@ -706,7 +706,7 @@ func TestControllerIdentityAndLoginPreflight(t *testing.T) {
 	if response.StatusCode != http.StatusNoContent {
 		t.Fatalf("login preflight status=%d", response.StatusCode)
 	}
-	if response.Header.Get("X-NLI-Controller") != "v19" || !strings.Contains(response.Header.Get("Allow"), "POST") {
+	if response.Header.Get("X-NLI-Controller") != "v20" || !strings.Contains(response.Header.Get("Allow"), "POST") {
 		t.Fatalf("login preflight identity=%q allow=%q", response.Header.Get("X-NLI-Controller"), response.Header.Get("Allow"))
 	}
 }

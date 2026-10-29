@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	parserassets "nexora.local/nli-v19/configs/parsers"
-	parserpolicy "nexora.local/nli-v19/parser-policy"
+	parserassets "nexora.local/nli-v20/configs/parsers"
+	parserpolicy "nexora.local/nli-v20/parser-policy"
 )
 
 const (

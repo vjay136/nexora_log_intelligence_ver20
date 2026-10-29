@@ -82,7 +82,7 @@ test('proxy preserves the NLI controller login preflight contract', async () => 
       headers: {
         allow: 'POST, OPTIONS',
         'cache-control': 'no-store',
-        'x-nli-controller': 'v19',
+        'x-nli-controller': 'v20',
       },
     });
   };
@@ -93,7 +93,7 @@ test('proxy preserves the NLI controller login preflight contract', async () => 
     assert.equal(observed.url, 'https://controller.example.com/api/v1/auth/login');
     assert.equal(observed.options.body, undefined);
     assert.equal(response.headers.allow, 'POST, OPTIONS');
-    assert.equal(response.headers['x-nli-controller'], 'v19');
+    assert.equal(response.headers['x-nli-controller'], 'v20');
     assert.equal(response.headers['x-nli-upstream'], 'controller');
   } finally {
     globalThis.fetch = originalFetch;

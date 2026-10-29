@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"nexora.local/nli-v19/parser-policy"
+	"nexora.local/nli-v20/parser-policy"
 )
 
 // assuranceRuntimePack converts the bounded Assurance regex definition into

@@ -5,9 +5,9 @@ import { readFile } from 'node:fs/promises';
 // and database availability. e2e.spec.js separately exercises a real controller.
 const origin = 'http://127.0.0.1:4176';
 const tabs = ['operations', 'monitoring', 'streams', 'sync-fabric', 'nhle-monitor', 'napi-monitor', 'nal-monitor', 'assurance', 'quarantine-wizard', 'upes', 'parser-workspace', 'nupire', 'api-monitor', 'field-integrity', 'fleet', 'parser-sync', 'clients', 'controller', 'parsers', 'migration', 'input-paths', 'kv', 'static', 'projection', 'studio', 'regex', 'knownkeys', 'semantic', 'engine-network', 'engine-url', 'engine-email', 'engine-subject', 'outputs', 'metadata', 'unknowns', 'drift', 'performance', 'rollouts', 'artifacts', 'security', 'system', 'communications', 'notifications', 'ai'];
-const assets = Object.fromEntries(await Promise.all(['index.html', 'app.js', 'styles.css', 'nli-mark.svg', 'nexora-logo-v19.png', 'login-banner-v19.png', 'nexora-poster-v19.png'].map(async name => [name, await readFile(new URL(name, import.meta.url))])));
+const assets = Object.fromEntries(await Promise.all(['index.html', 'app.js', 'styles.css', 'nli-mark.svg', 'nexora-logo-v20.png', 'login-banner-v20.png', 'nexora-poster-v20.png'].map(async name => [name, await readFile(new URL(name, import.meta.url))])));
 
-async function mockController(page, { role = 'admin', healthIdentity = 'v19', upesSnapshot = null, assurancePassed = true, nupireCandidates = [], quarantineRaw = 'exact raw source line', qrwParsers = [], qrwRecords = null, qrwSyncAssets = null } = {}) {
+async function mockController(page, { role = 'admin', healthIdentity = 'v20', upesSnapshot = null, assurancePassed = true, nupireCandidates = [], quarantineRaw = 'exact raw source line', qrwParsers = [], qrwRecords = null, qrwSyncAssets = null } = {}) {
   const observed = [];
   const cases = [];
   const uploads = [];
@@ -82,9 +82,9 @@ async function mockController(page, { role = 'admin', healthIdentity = 'v19', up
     if (path === '/api/v1/quarantine/records/q-1/raw') return route.fulfill({ status: 200, headers: { ...headers, 'content-type': 'text/plain' }, body: quarantineRaw });
     if (path === '/api/v1/quarantine/records/q-1/analyze' && request.method() === 'POST') return fulfill({ raw_sha256: 'c'.repeat(64), record: { id: 'q-1', node_id: 'node-1', raw_available: true }, result: { raw: quarantineRaw, passed: false, parser: { name: 'no-match' } }, parser_changed: false, review_state: 'analysis_only' });
     if (path === '/api/v1/admin/ai-provider') return fulfill({ provider: { provider: 'openai', model: 'test-model', configured: false, enabled: false } });
-    if (path === '/api/v1/sync/snapshot') return fulfill({ schema_version: 'nli.sync.v1', revision: 7, generated_at: new Date().toISOString(), target_interval_ms: 1000, aggregate: { nli_source_records_read_total: 120, nli_source_bytes_read_total: 4096, nli_parser_records_succeeded_total: 116, nli_parser_records_failed_total: 4, nli_normalized_records_total: 116, nli_quarantined_records_total: 4, nli_validation_attempts_total: 120, nli_validation_passed_total: 116, nli_validation_failed_total: 4, nli_queue_depth: 4, read_lines_per_second: 90, normalized_per_second: 87, quarantined_per_second: 3, validation_attempts_per_second: 90, validation_passed_per_second: 87, validation_failed_per_second: 3, bytes_per_second: 4096, backpressure_source_count: 0, nli_telemetry_propagation_delay_seconds_p95: 0.08 }, sources: [{ node_id: 'node-1', source: '/var/log/mail.log', process_generation: 'gen-1', sequence: 7, phase: 'tailing', counters: { nli_source_records_read_total: 120, nli_parser_records_succeeded_total: 116, nli_parser_records_failed_total: 4, nli_normalized_records_total: 116, nli_quarantined_records_total: 4, nli_validation_attempts_total: 120, nli_validation_passed_total: 116, nli_validation_failed_total: 4 }, rates: { read_lines_per_second: 90, normalized_per_second: 87, quarantined_per_second: 3, validation_attempts_per_second: 90, validation_passed_per_second: 87, validation_failed_per_second: 3, bytes_per_second: 4096 }, queue: { nli_queue_depth: 4, queue_capacity: 128, backpressure: false }, controller_received_at: new Date().toISOString(), controller_processing_ms: 2, observed_propagation_delay_ms: 80, freshness: 'live', freshness_age_ms: 120, freshness_reason: 'within target', critical: false, diagnostic_codes: [] }], diagnostics: { subscribers: 1, tracked_sources: 1, live: 1, delayed: 0, stale: 0, disconnected: 0, accepted: 7, duplicate: 0, out_of_order: 0, sequence_gaps: 0, reconnects: 0, coalesced: 0, rejected: 0, missed_deadlines: 0, clock_skew: 0, propagation_delay_ms_p50: 35, propagation_delay_ms_p95: 80, propagation_delay_ms_p99: 95, issues: [{ code: 'parser_latency', stage: 'parser', severity: 'warning', component: 'NHLE', node_id: 'node-1', source: '/var/log/mail.log', reason: 'parser latency exceeded warning threshold', recommended_action: 'Inspect parser trace and queue saturation.', last_seen: new Date().toISOString(), occurrences: 1 }] }, controller: { health: 'ok', version: '19.0.0', uptime_seconds: 600, process_memory_alloc_bytes: 33554432, process_memory_sys_bytes: 67108864, cpu_count: 4, goroutines: 12, open_file_descriptors: 21 }, infrastructure: { clients: [{ node_id: 'node-1', hostname: 'mail-node-1', cpu_percent: 18, memory_percent: 31, memory_bytes: 1073741824, load_1m: .4, load_5m: .3, load_15m: .2, updated_at: new Date().toISOString() }] }, subsystems: { nhle: { status: 'live', updated_at: new Date().toISOString(), source_count: 1, active_nodes: 1, records_read_total: 120, normalized_total: 116, quarantined_total: 4, queue_depth: 4, backpressure_sources: 0, read_lines_per_second: 90, normalized_per_second: 87 }, napi: { status: 'live', updated_at: new Date().toISOString(), requests_total: 3, failures_total: 0, pending_drafts: 1, latest_proposal_at: new Date().toISOString() }, nal: { status: 'live', updated_at: new Date().toISOString(), total: 5, queued: 1, running: 1, passed: 3, failed: 0, cancelled: 0, latest_run_at: new Date().toISOString() }, delivery: { status: 'ready', updated_at: new Date().toISOString(), acknowledgements_by_destination: { Loki: { delivered: 116, failed: 1 } }, retry_backlog_latency_status: 'not_instrumented' }, replay: { status: 'ready', state: 'queued', updated_at: new Date().toISOString(), queued: 1, reprocessing: 1, resolved: 2, oldest_queued_age_seconds: 45, attempts_total: 3 }, release_readiness: { status: 'ready', state: 'ready', updated_at: new Date().toISOString(), managed_nodes: 1, release_drifted_nodes: 0, evidence: 'persisted desired and reported active release hashes' } } });
+    if (path === '/api/v1/sync/snapshot') return fulfill({ schema_version: 'nli.sync.v1', revision: 7, generated_at: new Date().toISOString(), target_interval_ms: 1000, aggregate: { nli_source_records_read_total: 120, nli_source_bytes_read_total: 4096, nli_parser_records_succeeded_total: 116, nli_parser_records_failed_total: 4, nli_normalized_records_total: 116, nli_quarantined_records_total: 4, nli_validation_attempts_total: 120, nli_validation_passed_total: 116, nli_validation_failed_total: 4, nli_queue_depth: 4, read_lines_per_second: 90, normalized_per_second: 87, quarantined_per_second: 3, validation_attempts_per_second: 90, validation_passed_per_second: 87, validation_failed_per_second: 3, bytes_per_second: 4096, backpressure_source_count: 0, nli_telemetry_propagation_delay_seconds_p95: 0.08 }, sources: [{ node_id: 'node-1', source: '/var/log/mail.log', process_generation: 'gen-1', sequence: 7, phase: 'tailing', counters: { nli_source_records_read_total: 120, nli_parser_records_succeeded_total: 116, nli_parser_records_failed_total: 4, nli_normalized_records_total: 116, nli_quarantined_records_total: 4, nli_validation_attempts_total: 120, nli_validation_passed_total: 116, nli_validation_failed_total: 4 }, rates: { read_lines_per_second: 90, normalized_per_second: 87, quarantined_per_second: 3, validation_attempts_per_second: 90, validation_passed_per_second: 87, validation_failed_per_second: 3, bytes_per_second: 4096 }, queue: { nli_queue_depth: 4, queue_capacity: 128, backpressure: false }, controller_received_at: new Date().toISOString(), controller_processing_ms: 2, observed_propagation_delay_ms: 80, freshness: 'live', freshness_age_ms: 120, freshness_reason: 'within target', critical: false, diagnostic_codes: [] }], diagnostics: { subscribers: 1, tracked_sources: 1, live: 1, delayed: 0, stale: 0, disconnected: 0, accepted: 7, duplicate: 0, out_of_order: 0, sequence_gaps: 0, reconnects: 0, coalesced: 0, rejected: 0, missed_deadlines: 0, clock_skew: 0, propagation_delay_ms_p50: 35, propagation_delay_ms_p95: 80, propagation_delay_ms_p99: 95, issues: [{ code: 'parser_latency', stage: 'parser', severity: 'warning', component: 'NHLE', node_id: 'node-1', source: '/var/log/mail.log', reason: 'parser latency exceeded warning threshold', recommended_action: 'Inspect parser trace and queue saturation.', last_seen: new Date().toISOString(), occurrences: 1 }] }, controller: { health: 'ok', version: '20.0.0', uptime_seconds: 600, process_memory_alloc_bytes: 33554432, process_memory_sys_bytes: 67108864, cpu_count: 4, goroutines: 12, open_file_descriptors: 21 }, infrastructure: { clients: [{ node_id: 'node-1', hostname: 'mail-node-1', cpu_percent: 18, memory_percent: 31, memory_bytes: 1073741824, load_1m: .4, load_5m: .3, load_15m: .2, updated_at: new Date().toISOString() }] }, subsystems: { nhle: { status: 'live', updated_at: new Date().toISOString(), source_count: 1, active_nodes: 1, records_read_total: 120, normalized_total: 116, quarantined_total: 4, queue_depth: 4, backpressure_sources: 0, read_lines_per_second: 90, normalized_per_second: 87 }, napi: { status: 'live', updated_at: new Date().toISOString(), requests_total: 3, failures_total: 0, pending_drafts: 1, latest_proposal_at: new Date().toISOString() }, nal: { status: 'live', updated_at: new Date().toISOString(), total: 5, queued: 1, running: 1, passed: 3, failed: 0, cancelled: 0, latest_run_at: new Date().toISOString() }, delivery: { status: 'ready', updated_at: new Date().toISOString(), acknowledgements_by_destination: { Loki: { delivered: 116, failed: 1 } }, retry_backlog_latency_status: 'not_instrumented' }, replay: { status: 'ready', state: 'queued', updated_at: new Date().toISOString(), queued: 1, reprocessing: 1, resolved: 2, oldest_queued_age_seconds: 45, attempts_total: 3 }, release_readiness: { status: 'ready', state: 'ready', updated_at: new Date().toISOString(), managed_nodes: 1, release_drifted_nodes: 0, evidence: 'persisted desired and reported active release hashes' } } });
     if (path === '/api/v1/sync/stream') return route.fulfill({ status: 200, headers: { ...headers, 'content-type': 'text/event-stream', 'cache-control': 'no-cache' }, body: '' });
-    if (path === '/api/v1/dashboard/snapshot') return fulfill({ overview: { fleet: { total: 1, online: 1 }, metadata: {}, storage: { mode: 'supabase', status: 'connected' } }, metadata: { records: [{ record: { node_id: 'node-1', service: 'smtp-in', parser_id: 'smtp-in/reviewed', route: 'normal', result: 'success', latency_ms: 2, timestamp: '2026-10-17T05:00:00Z' } }], routes: { normal: 1 } }, system: { health: 'ok', version: '19.0.0', storage: { mode: 'supabase', status: 'connected' } }, ai_usage: { requests: 0 }, fleet_sync: { nodes: [{ node: { id: 'node-1', hostname: 'mail-node-1', status: 'online', last_seen: '2026-10-17T05:00:00Z', issues: [], metrics: { logs_received: 120, logs_parsed: 116, logs_quarantined: 4, parse_rate_pct: 96.67, parse_latency_ms: 2.4, cpu_percent: 18, memory_percent: 31 } }, sync: { drifted: false } }] }, timeseries: { from: '2026-10-17T04:58:00Z', to: '2026-10-17T05:00:00Z', points: [{ timestamp: '2026-10-17T04:59:00Z', logs_received: 60, logs_parsed: 58, logs_quarantined: 2, errors: 1, parse_latency_ms_avg: 2.2 }, { timestamp: '2026-10-17T05:00:00Z', logs_received: 60, logs_parsed: 58, logs_quarantined: 2, errors: 0, parse_latency_ms_avg: 2.6 }], system: { controller_cpu_count: 4, controller_goroutines: 12, controller_memory_alloc_bytes: 33554432 } }, stream_files: [{ node_id: 'node-1', source: '/var/log/nli/input/smtp-in.log', phase: 'tailing', read_lines_per_second: 90, normalized_per_second: 87, quarantined_per_second: 3, queue_depth: 4, queue_capacity: 128, backpressure: false, read_duration_ns: 1000000, parse_duration_ns: 2000000, output_duration_ns: 3000000, updated_at: '2026-10-17T05:00:00Z' }] });
+    if (path === '/api/v1/dashboard/snapshot') return fulfill({ overview: { fleet: { total: 1, online: 1 }, metadata: {}, storage: { mode: 'supabase', status: 'connected' } }, metadata: { records: [{ record: { node_id: 'node-1', service: 'smtp-in', parser_id: 'smtp-in/reviewed', route: 'normal', result: 'success', latency_ms: 2, timestamp: '2026-10-17T05:00:00Z' } }], routes: { normal: 1 } }, system: { health: 'ok', version: '20.0.0', storage: { mode: 'supabase', status: 'connected' } }, ai_usage: { requests: 0 }, fleet_sync: { nodes: [{ node: { id: 'node-1', hostname: 'mail-node-1', status: 'online', last_seen: '2026-10-17T05:00:00Z', issues: [], metrics: { logs_received: 120, logs_parsed: 116, logs_quarantined: 4, parse_rate_pct: 96.67, parse_latency_ms: 2.4, cpu_percent: 18, memory_percent: 31 } }, sync: { drifted: false } }] }, timeseries: { from: '2026-10-17T04:58:00Z', to: '2026-10-17T05:00:00Z', points: [{ timestamp: '2026-10-17T04:59:00Z', logs_received: 60, logs_parsed: 58, logs_quarantined: 2, errors: 1, parse_latency_ms_avg: 2.2 }, { timestamp: '2026-10-17T05:00:00Z', logs_received: 60, logs_parsed: 58, logs_quarantined: 2, errors: 0, parse_latency_ms_avg: 2.6 }], system: { controller_cpu_count: 4, controller_goroutines: 12, controller_memory_alloc_bytes: 33554432 } }, stream_files: [{ node_id: 'node-1', source: '/var/log/nli/input/smtp-in.log', phase: 'tailing', read_lines_per_second: 90, normalized_per_second: 87, quarantined_per_second: 3, queue_depth: 4, queue_capacity: 128, backpressure: false, read_duration_ns: 1000000, parse_duration_ns: 2000000, output_duration_ns: 3000000, updated_at: '2026-10-17T05:00:00Z' }] });
     if (path === '/api/v1/overview') return fulfill({ fleet: {}, metadata: {}, storage: { mode: 'supabase', status: 'connected' } });
     if (path === '/api/v1/telemetry/stats') return fulfill({ received: 120, parsed: 116, quarantined: 4 });
     if (path === '/api/v1/telemetry/stream/snapshot') return fulfill({ bounded: true, files: [{ node_id: 'node-1', source: '/var/log/mail.log', phase: 'tailing', read_lines_per_second: 90, normalized_per_second: 80, quarantined_per_second: 5, bytes_per_second: 4096, queue_depth: 4, queue_capacity: 128, backpressure: false, read_duration_ns: 1000000, parse_duration_ns: 2000000, output_duration_ns: 3000000, total_duration_ns: 6000000, read_lines: 900, updated_at: '2026-10-14T00:00:00Z', thresholds: { read_lines_per_second: 80, bytes_per_second: 5000, quarantined_per_second: 10, queue_depth: 100 } }] });
@@ -129,7 +129,7 @@ async function mockController(page, { role = 'admin', healthIdentity = 'v19', up
     if (path === '/api/v1/notifications/config' && request.method() === 'PUT') { const body=request.postDataJSON();notificationPolicySaves.push(body);return fulfill({policy:body,channels:{in_app:{enabled:true,state:'available',status:'available'},email:{enabled:body.channels.email.enabled,state:body.channels.email.enabled?'ready':'not_configured',status:body.channels.email.enabled?'ready':'not_configured'},pagerduty:{enabled:body.channels.pagerduty.enabled,state:body.channels.pagerduty.enabled?'ready':'not_configured',status:body.channels.pagerduty.enabled?'ready':'not_configured'}}}); }
     if (path === '/api/v1/notifications/config') return fulfill({ policy: { channels: { in_app: { enabled: true }, email: { enabled: false, server_env: 'NLI_SMTP_SERVER', sender_env: 'NLI_NOTIFICATION_EMAIL_FROM', recipient_env: 'NLI_NOTIFICATION_EMAIL_RECIPIENTS', username_env:'NLI_SMTP_USERNAME', password_env:'NLI_SMTP_PASSWORD' }, pagerduty: { enabled: false, secret_env: 'NLI_PAGERDUTY_ROUTING_KEY' } }, admin_fallback: true, recipients: ['admin'], events: ['approval','quarantine','sync','system','delivery','security'] }, channels: { in_app: { state: 'available', status: 'available' }, email: { state: 'not_configured', status: 'not_configured' }, pagerduty: { state: 'not_configured', status: 'not_configured' } } });
     if (path.match(/^\/api\/v1\/notifications\/audit-[^/]+$/) && request.method() === 'POST') return fulfill({ status: 'acknowledged' });
-    if (path === '/api/v1/system') return fulfill({ version: '19.0.0', health: 'ok', storage: { mode: 'supabase', status: 'connected' }, security: { audit_chain: 'ok' } });
+    if (path === '/api/v1/system') return fulfill({ version: '20.0.0', health: 'ok', storage: { mode: 'supabase', status: 'connected' }, security: { audit_chain: 'ok' } });
     return fulfill({ error: `Unmocked API: ${path}` }, 500);
   });
   return { observed, uploads, assuranceRequests, assuranceCorpora, assurancePlans, assuranceRuns, outputSaves, inputSaves, outputProfiles, inputProfiles, inputRolloutSaves, rolloutSaves, rolloutProposals, historyQueries, users, auditEvents, notificationPolicySaves, qrwParserActions, qrwReplays, qrwSyncVerifications, qrwRolloutRequests };
@@ -302,7 +302,7 @@ test('empty telemetry uses reported state and never renders NaN', async ({ page 
   await mockController(page);
   await page.route(`${origin}/api/v1/sync/snapshot`, route => route.fulfill({
     status:200,
-    headers:{'content-type':'application/json','x-nli-controller':'v19','x-nli-upstream':'controller'},
+    headers:{'content-type':'application/json','x-nli-controller':'v20','x-nli-upstream':'controller'},
     body:JSON.stringify({schema_version:'nli.sync.v1',revision:0,generated_at:new Date().toISOString(),target_interval_ms:1000,aggregate:{},sources:[],diagnostics:{issues:[]},subsystems:{}}),
   }));
   await login(page);
@@ -370,6 +370,7 @@ test('Guided Parser Repair Studio inspects retained failures, uses AI only after
   await page.getByRole('tab', { name: 'Guided Parser Repair Studio' }).click();
   await expect(page.getByText('q-1', { exact: true }).first()).toBeVisible();
   await expect(page.locator('.quarantine-wizard [data-wizard-step]')).toHaveCount(9);
+  await page.getByRole('button',{name:'Inspect',exact:true}).click();
   await expect(page.locator('#gprs-preview-form [name=manual_field_name]')).toBeVisible();
   await expect(page.locator('#gprs-preview-form [name=manual_field_index]')).toBeVisible();
   await expect(page.locator('#gprs-preview-form [name=manual_delimiter]')).toBeVisible();
@@ -379,15 +380,29 @@ test('Guided Parser Repair Studio inspects retained failures, uses AI only after
   const desired = page.locator('#gprs-preview-form [name=gprs_desired]');
   await desired.fill('{"user":"alice"}');
   await page.locator('#gprs-preview-form [name=mapping]').fill('{"username":"user"}');
-  await page.getByRole('button', { name: 'Run deterministic preview' }).click();
+  await page.locator('[data-wizard-step="6"] button').click();
+  await page.getByRole('button', { name: /Run deterministic preview/ }).click();
   await expect(page.getByTestId('gprs-preview')).toContainText('records_tested');
   await expect(page.getByRole('button', { name: 'Ask AI to diagnose and propose a fix' })).toBeVisible();
   expect(mock.observed).toContain('POST /api/v1/quarantine/records/q-1/analyze');
   expect(mock.assuranceRequests.at(-1).desired).toEqual({ user: 'alice' });
-  await page.getByRole('button', { name: 'Create parser candidate' }).click();
+  await page.getByRole('button', { name: 'Edit generated candidate' }).click();
   await expect(page.getByRole('tab', { name: 'Guided Parser Repair Studio' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#assurance-panel-gprs #gprs-parser-helper-form')).toBeVisible();
   await expect(page.locator('#gprs-parser-helper-form [name=samples]')).toHaveValue('exact raw source line');
+});
+
+test('Quarantine inbox groups only controller-verified signatures and isolates unverified records', async ({ page }) => {
+  await mockController(page, { qrwRecords: [
+    { id:'q-unverified-1', node_id:'node-1', service:'smtp', first_seen:'2026-10-10T00:00:00Z', attempt_count:1, status:'waiting', error_codes:['no_match'], raw_available:true },
+    { id:'q-unverified-2', node_id:'node-1', service:'smtp', first_seen:'2026-10-10T00:01:00Z', attempt_count:1, status:'waiting', error_codes:['no_match'], raw_available:true },
+    { id:'q-verified-1', node_id:'node-1', service:'smtp', first_seen:'2026-10-10T00:02:00Z', attempt_count:1, status:'waiting', error_codes:['no_match'], raw_available:true, failure_signature:'smtp-shape-a' },
+    { id:'q-verified-2', node_id:'node-2', service:'smtp', first_seen:'2026-10-10T00:03:00Z', attempt_count:1, status:'waiting', error_codes:['no_match'], raw_available:true, failure_signature:'smtp-shape-a' },
+  ] });
+  await login(page);
+  await page.getByTestId('nav-quarantine-wizard').click();
+  await expect(page.getByText('Individual record · shared cause unverified')).toHaveCount(2);
+  await expect(page.getByText('2 signature-matched records')).toHaveCount(1);
 });
 
 test('Quarantine Resolution Wizard maps the required unstructured fixture without fabricating delimiter values and saves a governed candidate', async ({ page }) => {
@@ -399,21 +414,21 @@ test('Quarantine Resolution Wizard maps the required unstructured fixture withou
   await expect(page.locator('.quarantine-wizard [data-wizard-step]')).toHaveCount(9);
   await page.getByRole('button',{name:'Inspect',exact:true}).click();
   await expect(page.locator('#gprs-preview-form [name=raw_evidence]')).toHaveValue(raw);
+  await page.getByRole('button',{name:/Define desired schema/}).click();
   await page.getByRole('button',{name:'Suggest from raw log'}).click();
   await expect(page.locator('[data-qrw-key=name]')).toHaveCount(9);
   await expect(page.locator('[data-qrw-key=name]').nth(0)).toHaveValue('date');
   await expect(page.locator('[data-qrw-key=name]').nth(7)).toHaveValue('event_type');
-  await expect(page.getByRole('button',{name:'Back: inspect raw log'})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Next: generate candidate'})).toBeVisible();
+  await expect(page.getByRole('button',{name:/Back to evidence/})).toBeVisible();
+  await expect(page.getByRole('button',{name:/Generate parser candidate/})).toBeVisible();
   await expect(page.locator('[data-qrw-key=timestamp_format]')).toHaveCount(9);
   await expect(page.locator('[data-qrw-key=null_policy]')).toHaveCount(9);
   const editor=page.locator('#gprs-parser-helper-form');
   const initialParser=await editor.locator('[name=parser]').inputValue();
   await page.getByRole('button',{name:'Test all fields'}).click();
   await expect(page.locator('#qrw-field-status')).toContainText('2 field mapping error');
-  await page.getByRole('button',{name:'Run deterministic preview'}).click();
-  await page.getByRole('button',{name:'Create parser candidate'}).click();
-  await expect(page.getByRole('alert').last()).toContainText('invalid field');
+  await page.locator('[data-wizard-step="5"] button').click();
+  await expect(page.getByRole('alert').last()).toContainText('Resolve field mapping errors');
   await expect(editor.locator('[name=parser]')).toHaveValue(initialParser);
   const confirmations=page.getByLabel('Confirm delimiter interpretation');
   await expect(confirmations).toHaveCount(2);
@@ -425,16 +440,17 @@ test('Quarantine Resolution Wizard maps the required unstructured fixture withou
   await expect(page.locator('#qrw-field-status')).toContainText('9 fields mapped');
   const desired=JSON.parse(await page.locator('#gprs-preview-form [name=gprs_desired]').inputValue());
   expect(desired).toMatchObject({date:'20250812',hostname:'aaa-gmailrgo009',service:'mail',pid:3609,status:0,minor_pid:140293768701696,event_type:'Note',event_name:'systemlogs_for_data'});
-  await page.getByRole('button',{name:'Run deterministic preview'}).click();
-  await expect.poll(()=>mock.observed.includes('POST /api/v1/quarantine/records/q-1/analyze')).toBe(true);
   await page.locator('[data-qrw-key=transform]').first().selectOption('lowercase');
   await page.getByRole('button',{name:'Test all fields'}).click();
-  await page.getByRole('button',{name:'Create parser candidate'}).click();
+  await page.locator('[data-wizard-step="5"] button').click();
+	await page.getByRole('button',{name:/Prepare candidate from evidence/}).click();
   await expect(page.getByRole('alert').last()).toContainText('preview-only transform');
   await expect(editor.locator('[name=parser]')).toHaveValue(initialParser);
+	await page.getByRole('button',{name:/Back to mapping/}).click();
   await page.locator('[data-qrw-key=transform]').first().selectOption('none');
   await page.getByRole('button',{name:'Test all fields'}).click();
-  await page.getByRole('button',{name:'Create parser candidate'}).click();
+  await page.locator('[data-wizard-step="5"] button').click();
+  await page.getByRole('button',{name:/Prepare candidate from evidence/}).click();
   await expect(editor).toBeVisible();
   const parser=JSON.parse(await editor.locator('[name=parser]').inputValue());
   expect(parser.pattern).toContain('(?P<event_type>');
@@ -455,9 +471,11 @@ test('QRW stages 6–9 give the next action and gate replay on the exact origin 
   const lifecycle=page.locator('#page tr').filter({hasText:'reviewed-smtp'});
   await expect(page.locator('.qrw-next-action')).toContainText('Select and inspect one retained failure');
   await page.getByRole('button',{name:'Inspect',exact:true}).click();
+  await page.getByRole('button',{name:/Define desired schema/}).click();
   await page.getByRole('button',{name:'Suggest from raw log'}).click();
   await page.getByRole('button',{name:'Test all fields'}).click();
-  await page.getByRole('button',{name:'Run deterministic preview'}).click();
+  await page.locator('[data-wizard-step="6"] button').click();
+  await page.getByRole('button',{name:/Run deterministic preview/}).click();
   for(const step of [6,7,8,9]){
     const button=page.locator(`[data-wizard-step="${step}"] button`);
     await button.click();
@@ -466,6 +484,7 @@ test('QRW stages 6–9 give the next action and gate replay on the exact origin 
   await page.getByTestId('nav-operations').click();
   await page.getByTestId('nav-quarantine-wizard').click();
   await expect(page.locator('.qrw-next-action')).toContainText('Review the candidate independently');
+  await page.locator('[data-wizard-step="7"] button').click();
   await expect(lifecycle).toContainText('1/2 clients acknowledged');
   await lifecycle.getByRole('button',{name:'Approve',exact:true}).click();
   await page.getByTestId('nav-quarantine-wizard').click();
@@ -495,22 +514,24 @@ test('QRW stages 6–9 give the next action and gate replay on the exact origin 
   expect(mock.qrwReplays[0]).toEqual({record_ids:['q-1'],node_id:'node-1'});
   await page.getByTestId('nav-quarantine-wizard').click();
   await expect(page.locator('.qrw-next-action')).toContainText('Verify the replay result');
+  await page.locator('[data-wizard-step="7"] button').click();
   await lifecycle.getByRole('button',{name:'Rollback',exact:true}).click();
   await expect.poll(()=>mock.qrwParserActions.some(item=>item.id==='qr-candidate'&&item.action==='rollback')).toBe(true);
   await page.getByTestId('nav-quarantine-wizard').click();
+  await page.locator('[data-wizard-step="7"] button').click();
   const offboardRow=page.locator('#page tr').filter({hasText:'retired-smtp'});
   await offboardRow.getByRole('button',{name:'Offboard',exact:true}).click();
   await expect.poll(()=>mock.qrwParserActions.some(item=>item.id==='qr-offboard'&&item.action==='offboard')).toBe(true);
   expect(mock.qrwParserActions.map(item=>item.action)).toEqual(['approve','publish','rollback','offboard']);
 });
 
-test('premium login keeps the square V19 emblem and banner fully contained on desktop and mobile', async ({ page }) => {
+test('premium login keeps the square V20 emblem and banner fully contained on desktop and mobile', async ({ page }) => {
   await mockController(page);
   await page.goto(origin);
   const lockup=page.locator('.showcase-header .brand-emblem');
   const banner=page.locator('.login-banner-image');
-  await expect(lockup).toHaveAttribute('src','./nexora-poster-v19.png');
-  await expect(banner).toHaveAttribute('src','./login-banner-v19.png');
+  await expect(lockup).toHaveAttribute('src','./nexora-poster-v20.png');
+  await expect(banner).toHaveAttribute('src','./login-banner-v20.png');
   await expect(page.locator('.showcase-header .brand-wordmark b')).toHaveText('Nexora Log Intelligence');
   await expect(page.locator('.showcase-header .brand-wordmark strong')).toHaveText('Nexora');
   await expect.poll(()=>banner.evaluate(image=>image.naturalWidth)).toBeGreaterThan(0);
@@ -647,7 +668,7 @@ test('AI workspace exposes provider, status, results, parser, regex, template an
   }
 });
 
-test('V19 security identity and task navigation remain accessible', async ({ page }) => {
+test('V20 security identity and task navigation remain accessible', async ({ page }) => {
   await mockController(page);
   await page.goto(origin);
   const officialLogo = page.getByAltText('Nexora Log Intelligence logo').first();
@@ -924,7 +945,8 @@ test('operations does not fan out beyond shared canonical recovery', async ({ pa
   const requests = observed.slice(before);
   expect(requests.filter(item => item.startsWith('GET /api/v1/dashboard/snapshot'))).toHaveLength(0);
   expect(requests.filter(item => item === 'GET /api/v1/sync/snapshot').length).toBeLessThanOrEqual(1);
-  expect(requests.some(item => /\/api\/v1\/(overview|metadata|system|fleet\/sync|metrics\/timeseries)/.test(item))).toBe(false);
+  expect(requests.filter(item => item.startsWith('GET /api/v1/metrics/timeseries')).length).toBeLessThanOrEqual(1);
+  expect(requests.some(item => /\/api\/v1\/(overview|metadata|system|fleet\/sync)/.test(item))).toBe(false);
 });
 
 test('missing EventSource uses shared recovery only and signout aborts it cleanly', async ({ page }) => {
@@ -1075,7 +1097,7 @@ test('Assurance enables clear and download immediately and preserves results acr
   await expect(page.locator('#assurance-result')).toContainText('service=test user=operator');
   const downloadEvent = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download result JSON' }).click();
-  expect((await downloadEvent).suggestedFilename()).toBe('nli-v19-assurance-result.json');
+  expect((await downloadEvent).suggestedFilename()).toBe('nli-v20-assurance-result.json');
   await page.getByRole('button', { name: 'Clear manually' }).click();
   await expect(page.getByText('Run a case to inspect complete output', { exact: false })).toBeVisible();
   await expect(page.getByTestId('assurance-raw')).toHaveValue('');

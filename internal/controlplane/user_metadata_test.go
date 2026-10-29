@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"nexora.local/nli-v19/internal/store"
+	"nexora.local/nli-v20/internal/store"
 )
 
 type supabaseModeStore struct {

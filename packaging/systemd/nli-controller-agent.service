@@ -25,7 +25,7 @@ RestrictSUIDSGID=true
 LockPersonality=true
 RestrictRealtime=true
 ReadWritePaths=/var/lib/nli-controller
-ReadOnlyPaths=/etc/nli /usr/share/nli/webview_ver19
+ReadOnlyPaths=/etc/nli /usr/share/nli/webview_ver20
 
 [Install]
 WantedBy=multi-user.target

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"nexora.local/nli-v19/internal/fleet"
-	metastore "nexora.local/nli-v19/internal/store"
-	parserpolicy "nexora.local/nli-v19/parser-policy"
+	"nexora.local/nli-v20/internal/fleet"
+	metastore "nexora.local/nli-v20/internal/store"
+	parserpolicy "nexora.local/nli-v20/parser-policy"
 )
 
 func TestQuarantineResolutionWizardParserRolloutRequiresExactIndependentApproval(t *testing.T) {

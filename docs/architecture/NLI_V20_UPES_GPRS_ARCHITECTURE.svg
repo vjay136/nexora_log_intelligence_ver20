@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="650" viewBox="0 0 1400 650" role="img" aria-labelledby="title desc">
+  <title id="title">Nexora Log Intelligence Ver20 UPES and GPRS architecture</title>
+  <desc id="desc">UPES observes bounded structural failure signatures on the client. Assurance candidate review uses checksum gates and the existing signed parser bundle rollout. UPES does not directly create or activate a parser.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f5f7fb}.box{fill:#fff;stroke:#17345c;stroke-width:2;rx:14}.hot{fill:#e8f1ff;stroke:#285fa8}.ctrl{fill:#eff8f2;stroke:#2d7950}.warn{fill:#fff5e4;stroke:#ad7413}.title{font:700 26px Arial,sans-serif;fill:#132847}.head{font:700 18px Arial,sans-serif;fill:#132847}.body{font:15px Arial,sans-serif;fill:#30445f}.small{font:13px Arial,sans-serif;fill:#53647a}.arrow{stroke:#36577d;stroke-width:2.5;fill:none;marker-end:url(#arrow)}.dash{stroke:#777;stroke-width:2;stroke-dasharray:8 6;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0L10 4L0 8z" fill="#36577d"/></marker>
+  </defs>
+  <rect class="bg" width="1400" height="650"/>
+  <text class="title" x="50" y="52">Ver20 release 20.0.0-1: guided quarantine recovery and governed parser lifecycle</text>
+  <rect class="box hot" x="50" y="105" width="270" height="145"/>
+  <text class="head" x="75" y="140">Client parser path</text>
+  <text class="body" x="75" y="174">Parse / validate</text>
+  <text class="body" x="75" y="200">Quarantine exact source as configured</text>
+  <text class="small" x="75" y="228">Production data path remains authoritative</text>
+  <rect class="box hot" x="385" y="105" width="300" height="145"/>
+  <text class="head" x="410" y="140">UPES bounded runtime</text>
+  <text class="body" x="410" y="174">Structural digest + family/class/reason</text>
+  <text class="body" x="410" y="200">4,096 signatures / 256 queue by default</text>
+  <text class="small" x="410" y="228">In-memory counts; Next() summary queue</text>
+  <path class="arrow" d="M320 178H380"/>
+  <rect class="box warn" x="750" y="105" width="275" height="145"/>
+  <text class="head" x="775" y="140">UPES metrics</text>
+  <text class="body" x="775" y="174">Aggregate counts only</text>
+  <text class="body" x="775" y="200">No raw record or path in runtime</text>
+  <text class="small" x="775" y="228">No durable history / autonomous worker claim</text>
+  <path class="arrow" d="M685 178H745"/>
+  <rect class="box" x="1090" y="105" width="260" height="145"/>
+  <text class="head" x="1115" y="140">NURSF canonical snapshot</text>
+  <text class="body" x="1115" y="174">GET /api/v1/sync/snapshot</text>
+  <text class="body" x="1115" y="200">Aggregate and per-client counters</text>
+  <text class="small" x="1115" y="228">Freshness stays explicit; no signatures</text>
+  <path class="arrow" d="M320 125V80H1070V125"/>
+  <text class="small" x="565" y="74">Authenticated heartbeat carries available counters</text>
+
+  <rect class="box ctrl" x="50" y="335" width="270" height="175"/>
+  <text class="head" x="75" y="372">Assurance candidate</text>
+  <text class="body" x="75" y="406">Create/edit + deterministic validation</text>
+  <text class="body" x="75" y="432">Draft → submit</text>
+  <text class="small" x="75" y="468">Candidate may come from an operator or</text>
+  <text class="small" x="75" y="490">existing bounded synthesis workflow</text>
+  <rect class="box ctrl" x="385" y="335" width="300" height="175"/>
+  <text class="head" x="410" y="372">GPRS review gates</text>
+  <text class="body" x="410" y="406">SHA-256 binding through approve/publish</text>
+  <text class="body" x="410" y="432">Independent review</text>
+  <text class="body" x="410" y="458">Withdraw: in_review → draft</text>
+  <text class="small" x="410" y="490">Rollback: published → approved/inactive</text>
+  <path class="arrow" d="M320 420H380"/>
+  <rect class="box ctrl" x="750" y="335" width="275" height="175"/>
+  <text class="head" x="775" y="372">Existing signed rollout</text>
+  <text class="body" x="775" y="406">Bundle build + independent approval</text>
+  <text class="body" x="775" y="432">Client verification + atomic apply</text>
+  <text class="body" x="775" y="458">Applied bundle hash acknowledgement</text>
+  <text class="small" x="775" y="490">Only path to client parser state change</text>
+  <path class="arrow" d="M685 420H745"/>
+  <rect class="box" x="1090" y="330" width="260" height="185"/>
+  <text class="head" x="1115" y="370">Operator evidence</text>
+  <text class="body" x="1115" y="407">Validation results</text>
+  <text class="body" x="1115" y="433">Audit events</text>
+  <text class="body" x="1115" y="459">Rollout and applied state</text>
+  <text class="small" x="1115" y="492">Lifecycle state ≠ activation</text>
+  <path class="arrow" d="M1025 420H1085"/>
+  <path class="dash" d="M520 250V292H185V330"/>
+  <text class="small" x="235" y="285">No direct UPES → GPRS automation in this release</text>
+  <text class="small" x="50" y="590">UPES and the Assurance candidate lifecycle are separate. Parser delivery remains approval-gated, signed, and client-verified.</text>
+  <text class="small" x="50" y="615">Architecture claims are bounded by code and tests; this diagram does not certify deployment or production throughput.</text>
+</svg>

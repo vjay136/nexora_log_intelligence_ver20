@@ -1,4 +1,4 @@
-Nexora Log Intelligence Ver19 Enterprise WebView
+Nexora Log Intelligence Ver20 Enterprise WebView
 =========================
 
 This archive contains the authenticated frontend embedded in
@@ -13,7 +13,7 @@ POST /api/v1/auth/login.
 
 Controller setup for <controller-private-ip>
 ----------------------------------
-1. Install the Ver19 controller RPM on Rocky Linux.
+1. Install the Ver20 controller RPM on Rocky Linux.
 2. Run `sudo nli-controller-setup`.
 3. Choose mode `2`.
 4. Enter controller IP `<controller-private-ip>`.
@@ -37,7 +37,7 @@ For an SSH tunnel, extract this ZIP and run:
 
    powershell -ExecutionPolicy Bypass -File .\Open-NLI-WebView.ps1
 
-The launcher verifies the NLI Ver19 health/login contract before enabling
+The launcher verifies the NLI Ver20 health/login contract before enabling
 credentials.
 
 Managed clients

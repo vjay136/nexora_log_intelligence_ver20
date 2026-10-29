@@ -3,7 +3,7 @@ package drain_test
 import (
 	"testing"
 
-	"nexora.local/nli-v19/internal/drain"
+	"nexora.local/nli-v20/internal/drain"
 )
 
 func TestNewCluster(t *testing.T) {

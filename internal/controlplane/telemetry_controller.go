@@ -16,9 +16,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nexora.local/nli-v19/internal/eventstore"
-	"nexora.local/nli-v19/internal/wsrelay"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/eventstore"
+	"nexora.local/nli-v20/internal/wsrelay"
+	"nexora.local/nli-v20/telemetry"
 )
 
 type TelemetryController struct{ store *eventstore.Store }
@@ -606,12 +606,13 @@ func (h *StreamHub) serveCanonicalSSE(w http.ResponseWriter, r *http.Request, ev
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache, no-transform")
 	w.Header().Set("X-Accel-Buffering", "no")
-	enc := json.NewEncoder(w)
+	stream := newSSEDeadlineWriter(w, 15*time.Second)
+	enc := json.NewEncoder(stream)
 	initial := any(h.CanonicalSnapshot())
 	if snapshot != nil {
 		initial = snapshot(r)
 	}
-	if !writeSSE(w, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_snapshot", initial) {
+	if !writeSSE(stream, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_snapshot", initial) {
 		return
 	}
 	keepalive := time.NewTicker(h.target)
@@ -635,12 +636,12 @@ func (h *StreamHub) serveCanonicalSSE(w http.ResponseWriter, r *http.Request, ev
 				nhle["normalized_per_second"] = sample.CanonicalAggregate.NormalizedPerSecond
 			}
 			envelope := map[string]any{"schema_version": telemetry.SyncSchemaVersion, "revision": sample.CanonicalRevision, "emitted_at": time.Now().UTC(), "kind": "source", "source": sample, "aggregate": sample.CanonicalAggregate, "diagnostics": sample.CanonicalDiagnostics, "subsystems": map[string]any{"nhle": nhle}, "resync_required": sample.ResyncRequired}
-			if !writeSSE(w, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_delta", envelope) {
+			if !writeSSE(stream, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_delta", envelope) {
 				return
 			}
 			if sample.Critical {
 				critical := map[string]any{"schema_version": telemetry.SyncSchemaVersion, "revision": h.revision.Load(), "emitted_at": time.Now().UTC(), "kind": "critical", "node_id": sample.NodeID, "source": sample.Source, "diagnostic_codes": sample.DiagnosticCodes, "raw_payload_retained": false}
-				if !writeSSE(w, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_critical", critical) {
+				if !writeSSE(stream, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_critical", critical) {
 					return
 				}
 			}
@@ -654,7 +655,7 @@ func (h *StreamHub) serveCanonicalSSE(w http.ResponseWriter, r *http.Request, ev
 			if json.Unmarshal(message, &event) != nil || event.Type == "" {
 				continue
 			}
-			if !writeSSERaw(w, flusher, strconv.FormatUint(h.sequence.Add(1), 10), event.Type, message) {
+			if !writeSSERaw(stream, flusher, strconv.FormatUint(h.sequence.Add(1), 10), event.Type, message) {
 				return
 			}
 		case <-keepalive.C:
@@ -663,7 +664,7 @@ func (h *StreamHub) serveCanonicalSSE(w http.ResponseWriter, r *http.Request, ev
 			// callback here: it can query remote metadata and would multiply that
 			// work by every connected browser once per second.
 			heartbeat := h.CanonicalSnapshot()
-			if !writeSSE(w, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_heartbeat", heartbeat) {
+			if !writeSSE(stream, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "sync_heartbeat", heartbeat) {
 				return
 			}
 		}
@@ -700,8 +701,9 @@ func (h *StreamHub) serveSSE(w http.ResponseWriter, r *http.Request, events *wsr
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache, no-transform")
 	w.Header().Set("X-Accel-Buffering", "no")
-	enc := json.NewEncoder(w)
-	if !writeSSE(w, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "snapshot", map[string]any{"files": h.Snapshot()}) {
+	stream := newSSEDeadlineWriter(w, 30*time.Second)
+	enc := json.NewEncoder(stream)
+	if !writeSSE(stream, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "snapshot", map[string]any{"files": h.Snapshot()}) {
 		return
 	}
 	keepalive := time.NewTicker(20 * time.Second)
@@ -714,7 +716,7 @@ func (h *StreamHub) serveSSE(w http.ResponseWriter, r *http.Request, events *wsr
 			if !open {
 				return
 			}
-			if !writeSSE(w, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "telemetry", sample) {
+			if !writeSSE(stream, flusher, enc, strconv.FormatUint(h.sequence.Add(1), 10), "telemetry", sample) {
 				return
 			}
 		case message, open := <-eventCh:
@@ -727,16 +729,38 @@ func (h *StreamHub) serveSSE(w http.ResponseWriter, r *http.Request, events *wsr
 			if json.Unmarshal(message, &event) != nil || event.Type == "" {
 				continue
 			}
-			if !writeSSERaw(w, flusher, strconv.FormatUint(h.sequence.Add(1), 10), event.Type, message) {
+			if !writeSSERaw(stream, flusher, strconv.FormatUint(h.sequence.Add(1), 10), event.Type, message) {
 				return
 			}
 		case <-keepalive.C:
-			if _, err := io.WriteString(w, ": keepalive\n\n"); err != nil {
+			if _, err := io.WriteString(stream, ": keepalive\n\n"); err != nil {
 				return
 			}
 			flusher.Flush()
 		}
 	}
+}
+
+// sseDeadlineWriter refreshes the connection write deadline for each frame.
+// net/http's Server.WriteTimeout is an absolute per-request deadline, which is
+// appropriate for bounded API responses but otherwise severs healthy SSE
+// sessions at the timeout boundary. A bounded rolling deadline keeps streams
+// alive while still evicting a subscriber that stops reading.
+type sseDeadlineWriter struct {
+	w          io.Writer
+	controller *http.ResponseController
+	timeout    time.Duration
+}
+
+func newSSEDeadlineWriter(w http.ResponseWriter, timeout time.Duration) *sseDeadlineWriter {
+	return &sseDeadlineWriter{w: w, controller: http.NewResponseController(w), timeout: timeout}
+}
+
+func (w *sseDeadlineWriter) Write(payload []byte) (int, error) {
+	if err := w.controller.SetWriteDeadline(time.Now().Add(w.timeout)); err != nil && !errors.Is(err, http.ErrNotSupported) {
+		return 0, err
+	}
+	return w.w.Write(payload)
 }
 
 func writeSSE(w io.Writer, flusher http.Flusher, enc *json.Encoder, id, event string, sample any) bool {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"nexora.local/nli-v19/internal/mixedkv"
-	"nexora.local/nli-v19/static-layout"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/mixedkv"
+	"nexora.local/nli-v20/static-layout"
+	"nexora.local/nli-v20/telemetry"
 )
 
 const SMTPGoldenInput = "20260822 050048557+0200 severrgo001 smtp 230675 0 140347436861184 Note;SieveRuleMsg(2005/1) id=6A291BF5048F23DE:policy=outbound:checkpoint=AUTH:rule=INOUT_action:msg=PolicyMsgInfo:eventType=PolicyMsgInfo:action=disconnect:reason=badpassword:fromhost=11.22.33.44:geo=IL:helo=Site6:auth_ok=false:auth_user=managers999@012.meg.in:auth_fail=6:auth_tries=7:score=0"

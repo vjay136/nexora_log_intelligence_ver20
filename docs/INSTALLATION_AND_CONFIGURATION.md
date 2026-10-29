@@ -1,9 +1,9 @@
-# NLI v19 easy installation and configuration
+# NLI v20 easy installation and configuration
 
-## V19 automatic enterprise installation
+## V20 automatic enterprise installation
 
 For the smallest safe prompt surface on corporate, AWS, VMware, or ordinary
-Linux nodes, use `sudo bash install-controller-ver19.sh --automatic`. This
+Linux nodes, use `sudo bash install-controller-ver20.sh --automatic`. This
 generates unique controller credentials on the node, preserves existing
 credentials and audit-chain keys during upgrades, and discovers the host short
 name, FQDN, non-loopback addresses, and (through bounded IMDSv2 requests when
@@ -29,7 +29,7 @@ normalised/quarantine files, and reviewed parser-family mappings without parser
 prompts:
 
 ```bash
-sudo bash install-client-ver19.sh \
+sudo bash install-client-ver20.sh \
   --bootstrap ./nli-client-bootstrap.env \
   --all-log-files
 ```
@@ -38,16 +38,16 @@ Existing logs are preserved. Missing files are created as `nli:nli` mode
 `0640`, and every bundled ParserPack is self-tested before services start.
 
 These scripts support Rocky Linux 9 and Rocky Linux 10 on x86_64. Download only
-the versioned `nli-v19.0.0-3-x86_64.tar.gz` archive and its adjacent `.sha256`
+the versioned `nli-v20.0.0-3-x86_64.tar.gz` archive and its adjacent `.sha256`
 file from the same GitHub release. Never copy loose release files into an old
-`~/nli-ver19` directory. Extract each release into a new versioned directory:
+`~/nli-ver20` directory. Extract each release into a new versioned directory:
 
 ```bash
 mkdir -p ~/nli/releases
 cd ~/nli/releases
-sha256sum -c nli-v19.0.0-3-x86_64.tar.gz.sha256
-tar -xzf nli-v19.0.0-3-x86_64.tar.gz
-cd nli-v19.0.0-3-x86_64
+sha256sum -c nli-v20.0.0-3-x86_64.tar.gz.sha256
+tar -xzf nli-v20.0.0-3-x86_64.tar.gz
+cd nli-v20.0.0-3-x86_64
 cat RELEASE_ID
 sha256sum -c SHA256SUMS
 ```
@@ -61,8 +61,8 @@ running `dnf`. This prevents files from two releases being mixed.
 Run:
 
 ```bash
-sudo bash install-controller-ver19.sh --verify-only
-sudo bash install-controller-ver19.sh
+sudo bash install-controller-ver20.sh --verify-only
+sudo bash install-controller-ver20.sh
 ```
 
 To go straight to a specific setup mode after package verification, pass
@@ -88,7 +88,7 @@ matches the selected DNS name or IP, chains to the controller's system trust,
 and matches an unencrypted private key. Katello trust anchors and consumer or
 entitlement client certificates are not scanned. If no valid pair is found,
 mode 8 automatically performs mode 7's offline private-CA setup. For the
-prompt-free path, run `sudo bash install-controller-ver19.sh --quickstart`; it
+prompt-free path, run `sudo bash install-controller-ver20.sh --quickstart`; it
 selects an available controller identity and uses the same certificate scan
 with the safe private-CA fallback.
 
@@ -260,7 +260,7 @@ NLI_SETUP_STORAGE_PROVIDER=local
 NLI_SETUP_QUARANTINE_RAW_RETENTION=false
 EOF
 sudo chmod 0600 /etc/nli/controller-bootstrap.env
-sudo dnf -y install ./nli_controller_agent_ver19.rpm
+sudo dnf -y install ./nli_controller_agent_ver20.rpm
 sudo systemctl status nli-controller-bootstrap nli-controller-agent --no-pager
 ```
 
@@ -282,8 +282,8 @@ controller URLs or enrollment secrets over mDNS.
 Run:
 
 ```bash
-sudo bash install-client-ver19.sh --verify-only
-sudo bash install-client-ver19.sh
+sudo bash install-client-ver20.sh --verify-only
+sudo bash install-client-ver20.sh
 ```
 
 The script discovers the RPM and bootstrap file beside it. If the bootstrap
@@ -293,8 +293,8 @@ one-use enrollment token separately; the URL is never treated as a file path.
 For unattended setup, use a bootstrap file:
 
 ```bash
-sudo bash install-client-ver19.sh \
-  --rpm /path/to/nli_client_ver19.rpm \
+sudo bash install-client-ver20.sh \
+  --rpm /path/to/nli_client_ver20.rpm \
   --bootstrap /path/to/nli-client-bootstrap.env
 ```
 
@@ -355,7 +355,7 @@ controller are available. It deletes the one-use file after enrollment.
 ```bash
 sudo install -d -m 0750 /etc/nli
 sudo install -o root -g root -m 0600 nli-client-bootstrap.env /etc/nli/bootstrap.env
-sudo dnf -y install ./nli_client_ver19.rpm
+sudo dnf -y install ./nli_client_ver20.rpm
 sudo systemctl status nli-client-bootstrap nli-client-control nli-agent --no-pager
 ```
 
@@ -406,7 +406,7 @@ Then open **Live Metadata** and **Live Dashboard** in the WebApp; the test
 record's bounded parser telemetry should appear immediately after its controller POST.
 
 If a real log is unreadable, grant the `nli` account directory traversal and
-file read access, then use `sudo bash install-client-ver19.sh --configure-only`
+file read access, then use `sudo bash install-client-ver20.sh --configure-only`
 to apply and verify the updated paths. The control service needs root access
 for restricted package and certificate operations; do not copy its enrollment
 token into the parser environment file.
@@ -446,7 +446,7 @@ To change log paths or switch the destination later without reinstalling or
 re-enrolling the client, retain the installer and run:
 
 ```bash
-sudo bash install-client-ver19.sh --configure-only
+sudo bash install-client-ver20.sh --configure-only
 ```
 
 ## Three-node VMware test sequence
@@ -455,18 +455,18 @@ For one controller VM and two Rocky Linux client VMs:
 
 1. Copy the versioned archive and its `.sha256` file to the controller through
    the MobaXterm SFTP pane. Verify and extract it into a new versioned directory,
-   then run `sudo bash install-controller-ver19.sh --verify-only` followed by
-   `sudo bash install-controller-ver19.sh` over SSH.
+   then run `sudo bash install-controller-ver20.sh --verify-only` followed by
+   `sudo bash install-controller-ver20.sh` over SSH.
 2. Securely copy the controller's `/root/nli-client-bootstrap.env` to Client 1
    together with the same versioned archive and its `.sha256` file. Extract it
-   into a new versioned directory, run `sudo bash install-client-ver19.sh --verify-only`,
-   then run `sudo bash install-client-ver19.sh` and enter Client 1's real log paths.
+   into a new versioned directory, run `sudo bash install-client-ver20.sh --verify-only`,
+   then run `sudo bash install-client-ver20.sh` and enter Client 1's real log paths.
 3. Back on the controller, run
    `sudo nli-controller-setup --rotate-enrollment`. This creates a fresh
    `/root/nli-client-bootstrap.env` because enrollment tokens are one-use.
 4. Securely copy the new bootstrap file, versioned archive, and archive checksum
    to Client 2. Extract it into a new versioned directory, verify it, then run
-   `sudo bash install-client-ver19.sh` and enter Client 2's own log paths.
+   `sudo bash install-client-ver20.sh` and enter Client 2's own log paths.
 5. Verify both clients from the controller web interface and run the service
    checks below on all three VMs.
 
@@ -493,19 +493,19 @@ sudo journalctl -u nli-agent -u nli-client-control -n 100 --no-pager
 ## Additional AWS Red Hat and Cloudflare path
 
 The original guided modes above remain available. For a two-node AWS VPC, the
-additional V19 wrappers configure the same RPMs without public DNS or ACME:
+additional V20 wrappers configure the same RPMs without public DNS or ACME:
 
 ```bash
-sudo bash aws-rhel-preflight-ver19.sh
-sudo bash install-controller-aws-ver19.sh ./nli_controller_agent_ver19.rpm 10.20.1.10
-sudo bash install-client-aws-ver19.sh ./nli_client_ver19.rpm ./nli-client-bootstrap.env --automatic
+sudo bash aws-rhel-preflight-ver20.sh
+sudo bash install-controller-aws-ver20.sh ./nli_controller_agent_ver20.rpm 10.20.1.10
+sudo bash install-client-aws-ver20.sh ./nli_client_ver20.rpm ./nli-client-bootstrap.env --automatic
 ```
 
 Generate a least-privilege AWS CLI security-group plan with the controller SG,
 client SG, and administrator CIDR:
 
 ```bash
-bash aws-security-group-plan-ver19.sh sg-CONTROLLER sg-CLIENT 203.0.113.44/32
+bash aws-security-group-plan-ver20.sh sg-CONTROLLER sg-CLIENT 203.0.113.44/32
 ```
 
 For the combined AWS plus named-Cloudflare path, first create the tunnel and
@@ -513,15 +513,15 @@ published-application route in Cloudflare, mapping the chosen hostname to
 `https://127.0.0.1:12382`. Then run:
 
 ```bash
-sudo bash install-controller-aws-cloudflare-ver19.sh \
-  --rpm ./nli_controller_agent_ver19.rpm \
+sudo bash install-controller-aws-cloudflare-ver20.sh \
+  --rpm ./nli_controller_agent_ver20.rpm \
   --private-endpoint 10.20.1.10 \
   --public-hostname nli-controller.example.com \
   --tunnel-token-file /root/cloudflare-tunnel-token.txt
 ```
 
-See [AWS Red Hat installation](V19_AWS_RED_HAT_INSTALLATION.md) and
-[Cloudflare Tunnel](V19_CLOUDFLARE_TUNNEL.md). This path needs controller
+See [AWS Red Hat installation](V20_AWS_RED_HAT_INSTALLATION.md) and
+[Cloudflare Tunnel](V20_CLOUDFLARE_TUNNEL.md). This path needs controller
 outbound TCP/UDP 7844 and TCP 443 according to Cloudflare's current egress
 requirements. It needs no public inbound rule for TCP 12382.
 
@@ -596,14 +596,14 @@ the controller.
 Controller package only, preserving local configuration and state:
 
 ```bash
-sudo bash uninstall-controller-ver19.sh
+sudo bash uninstall-controller-ver20.sh
 ```
 
 Client package only, preserving local configuration, identity, spool, cache,
 and logs:
 
 ```bash
-sudo bash uninstall-client-ver19.sh
+sudo bash uninstall-client-ver20.sh
 ```
 
 To permanently remove the preserved local data, add `--purge`. Each script

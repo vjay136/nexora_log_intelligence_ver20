@@ -97,7 +97,7 @@ for secret_spec in "audit HMAC:$audit_key" "CSRF HMAC:$csrf_key" "Assurance encr
   valid_env_secret "$secret_value" || fail "$secret_label key is not safe for a systemd EnvironmentFile"
 done
 
-printf '\nNLI v19 controller first-run setup\n'
+printf '\nNLI v20 controller first-run setup\n'
 printf '  1) Local administration through SSH tunnel (secure default)\n'
 printf '  2) Private-network TLS for separate controller/client nodes\n\n'
 printf '  3) Public DNS + Nginx + ACME certificate (automated)\n'
@@ -472,7 +472,7 @@ PY
       openssl_or_fail 'private CA key generation' openssl genpkey -algorithm RSA \
         -pkeyopt rsa_keygen_bits:3072 -out "$generation_ca_key"
       openssl_or_fail 'private CA certificate generation' openssl req -x509 -new -sha256 -days 3650 \
-        -key "$generation_ca_key" -subj '/CN=NLI v19 Private Controller CA' \
+        -key "$generation_ca_key" -subj '/CN=NLI v20 Private Controller CA' \
         -addext 'basicConstraints=critical,CA:TRUE' \
         -addext 'keyUsage=critical,keyCertSign,cRLSign' \
         -out "$generation_ca_cert"
@@ -984,7 +984,7 @@ if [[ $mode == 4 ]]; then
   rm -f "$token_tmp"
   cat >/etc/systemd/system/nli-cloudflared.service <<EOF
 [Unit]
-Description=NLI v19 Cloudflare Tunnel connector
+Description=NLI v20 Cloudflare Tunnel connector
 After=network-online.target
 Wants=network-online.target
 
@@ -1154,7 +1154,7 @@ rm -f "$env_tmp"
 # without exposing credentials in terminal output or process arguments.
 credential_tmp=$(mktemp "${CREDENTIAL_FILE}.XXXXXX")
 cat >"$credential_tmp" <<EOF
-# NLI V19 controller credentials. Root only. Do not copy to clients.
+# NLI V20 controller credentials. Root only. Do not copy to clients.
 NLI_ENROLLMENT_TOKEN=$enrollment_token
 NLI_AUDIT_HMAC_KEY=$audit_key
 NLI_CSRF_HMAC_KEY=$csrf_key
@@ -1240,7 +1240,7 @@ wait_for_controller() {
     openssl x509 -in "$tls_cert" -noout -subject -ext subjectAltName 2>/dev/null >&2 || true
     fail 'controller health endpoint failed'
   }
-  printf '%s' "$health_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("service")=="nli-controller-agent" and d.get("api_version")=="v1"' || fail 'health endpoint is not an NLI v19 controller'
+  printf '%s' "$health_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("service")=="nli-controller-agent" and d.get("api_version")=="v1"' || fail 'health endpoint is not an NLI v20 controller'
 }
 
 verify_supabase() {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	parserpolicy "nexora.local/nli-v19/parser-policy"
+	parserpolicy "nexora.local/nli-v20/parser-policy"
 )
 
 func TestBuiltinProfilesHaveReviewedImmutableProvenance(t *testing.T) {

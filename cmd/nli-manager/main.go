@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"nexora.local/nli-v19/internal/engine"
-	"nexora.local/nli-v19/internal/manager"
+	"nexora.local/nli-v20/internal/engine"
+	"nexora.local/nli-v20/internal/manager"
 )
 
 func main() {

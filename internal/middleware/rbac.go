@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"nexora.local/nli-v19/internal/auth"
+	"nexora.local/nli-v20/internal/auth"
 )
 
 const (

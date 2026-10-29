@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"nexora.local/nli-v19/internal/auditlog"
-	metastore "nexora.local/nli-v19/internal/store"
+	"nexora.local/nli-v20/internal/auditlog"
+	metastore "nexora.local/nli-v20/internal/store"
 )
 
 func TestCommunicationStatusUsesObservedEvidence(t *testing.T) {

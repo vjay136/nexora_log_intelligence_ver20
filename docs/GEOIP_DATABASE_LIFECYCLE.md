@@ -1,4 +1,4 @@
-# V19 GeoIP database lifecycle
+# V20 GeoIP database lifecycle
 
 NLI performs GeoIP lookups only from local MaxMind DB (`.mmdb`) files. A log parse never calls GitHub, Supabase, or a geolocation API. The client uses the configured exact files:
 
@@ -65,7 +65,7 @@ generation through the organization's artifact rollout, verify its manifest and
 hashes on each client, run
 `sudo NLI_GEOIP_OPERATOR=admin-username nli geoip-activate --generation COMMIT`,
 and restart `nli-agent`. Use `nli geoip-rollback` to restore the previous managed
-generation after revalidation. V19 does
+generation after revalidation. V20 does
 not silently push newly mirrored databases to clients or treat a third-party
 mirror change as production approval.
 

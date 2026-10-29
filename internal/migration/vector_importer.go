@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/BurntSushi/toml"
-	parserpolicy "nexora.local/nli-v19/parser-policy"
+	parserpolicy "nexora.local/nli-v20/parser-policy"
 )
 
 type vectorConfig struct {
@@ -70,7 +70,7 @@ func translateVectorSource(file UploadedFile) MigrationResult {
 	}
 	pack := &parserpolicy.ParserPack{
 		ID:      identifier("vector_" + strings.TrimSuffix(baseName(file.Name), extension(file.Name))),
-		Version: "19.0.0", Revision: 1, SourceType: "migrated", SourceHash: file.Checksum,
+		Version: "20.0.0", Revision: 1, SourceType: "migrated", SourceHash: file.Checksum,
 		Author: "nli-migrate", ReviewState: parserpolicy.ReviewStateDraft, Rules: rules,
 		ResourceLimits: parserpolicy.ResourceLimits{
 			MaxInputBytes: 1 << 20, MaxFields: 512, MaxCaptures: 256, MaxRegexLength: 4096,

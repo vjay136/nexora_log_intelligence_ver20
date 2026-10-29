@@ -1,11 +1,11 @@
-%{!?nli_version:%global nli_version 19.0.0}
+%{!?nli_version:%global nli_version 20.0.0}
 %{!?nli_release:%global nli_release 1}
 Name:           nli-client
 Version:        %{nli_version}
 Release:        %{nli_release}%{?dist}
-Summary:        Nexora Log Intelligence Ver19 parsing client
+Summary:        Nexora Log Intelligence Ver20 parsing client
 License:        LicenseRef-Proprietary
-URL:            https://github.com/vjay136/nexora_log_intelligence_ver19.git
+URL:            https://github.com/vjay136/nexora_log_intelligence_ver20.git
 Source0:        %{name}-%{version}.tar.gz
 ExclusiveArch:  x86_64
 Provides:       nli-agent = %{version}-%{release}
@@ -21,8 +21,8 @@ AutoReqProv:    no
 %global __os_install_post %{nil}
 
 %description
-NLI v19 client containing the source-derived static parser agent, CLI, benchmark
-utility, and restricted fleet-control sidecar. The nli_clinet_ver19.rpm spelling
+NLI v20 client containing the source-derived static parser agent, CLI, benchmark
+utility, and restricted fleet-control sidecar. The nli_clinet_ver20.rpm spelling
 is a byte-identical distribution filename alias, not a second RPM package.
 
 %prep
@@ -52,7 +52,7 @@ install -m 0644 configs/outputs.example.json %{buildroot}%{_docdir}/%{name}/outp
 install -m 0644 systemd/nli-agent.service systemd/nli-client-control.service systemd/nli-client-bootstrap.service %{buildroot}/usr/lib/systemd/system/
 install -m 0644 README.md %{buildroot}%{_docdir}/%{name}/README.md
 install -m 0644 PARSER_CATALOG.md %{buildroot}%{_docdir}/%{name}/PARSER_CATALOG.md
-install -m 0644 V19_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md V19_R7_TEST_RESULTS.md V19_R8_TEST_RESULTS.md V19_R8_QRW_OPERATOR_TEST_GUIDE.md V19_QUARANTINE_RESOLUTION_WIZARD.md NLI_V19_UPES_GPRS_ARCHITECTURE.svg %{buildroot}%{_docdir}/%{name}/
+install -m 0644 V20_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md V20_R1_TEST_RESULTS.md V20_R1_QRW_OPERATOR_TEST_GUIDE.md V20_QUARANTINE_RESOLUTION_WIZARD.md NLI_V20_UPES_GPRS_ARCHITECTURE.svg %{buildroot}%{_docdir}/%{name}/
 install -m 0644 metrics/README.md metrics/metric-catalog.json metrics/prometheus-scrape.yml metrics/grafana-dashboard.json %{buildroot}%{_datadir}/nli/metrics/
 
 %pre
@@ -115,81 +115,15 @@ systemctl daemon-reload >/dev/null 2>&1 || :
 %doc %{_docdir}/%{name}/README.md
 %doc %{_docdir}/%{name}/outputs.example.json
 %doc %{_docdir}/%{name}/PARSER_CATALOG.md
-%doc %{_docdir}/%{name}/V19_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md
-%doc %{_docdir}/%{name}/V19_R7_TEST_RESULTS.md
-%doc %{_docdir}/%{name}/V19_R8_TEST_RESULTS.md
-%doc %{_docdir}/%{name}/V19_R8_QRW_OPERATOR_TEST_GUIDE.md
-%doc %{_docdir}/%{name}/V19_QUARANTINE_RESOLUTION_WIZARD.md
-%doc %{_docdir}/%{name}/NLI_V19_UPES_GPRS_ARCHITECTURE.svg
+%doc %{_docdir}/%{name}/V20_UPES_GPRS_ARCHITECTURE_AND_ACCEPTANCE.md
+%doc %{_docdir}/%{name}/V20_R1_TEST_RESULTS.md
+%doc %{_docdir}/%{name}/V20_R1_QRW_OPERATOR_TEST_GUIDE.md
+%doc %{_docdir}/%{name}/V20_QUARANTINE_RESOLUTION_WIZARD.md
+%doc %{_docdir}/%{name}/NLI_V20_UPES_GPRS_ARCHITECTURE.svg
 
 %changelog
+* Thu Oct 29 2026 Nexora Engineering <engineering@nexora.local> - 20.0.0-1
+- Fix exact parser-bundle approval, guided quarantine recovery, live source progress, and resilient TLS synchronization.
+
 * Wed Oct 28 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-8
-- Add the guided quarantine parser lifecycle, approval-gated fleet delivery, exact acknowledgement verification, replay, and safe offboarding controls.
-
-* Mon Oct 26 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-7
-- Add authoritative validation counters and guided quarantine recovery workflow
-
-* Mon Oct 26 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-6
-- Add bounded UPES failure discovery and the GPRS evidence-gated parser repair workflow.
-- Include the UPES/GPRS architecture and operator acceptance guide in release docs.
-
-* Sun Oct 25 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-5
-- Ship the bounded client and controller metrics catalog, Prometheus example, and Grafana dashboard.
-
-* Sun Oct 25 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-4
-- Emit independent auto-family JSON log rows immediately while preserving stack-trace grouping and exactly-once checkpoints
-- Add retained aggregate timeline history and multi-path input editing, validation, and rollout coverage
-
-* Sat Oct 24 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-3
-- Prevent restart replay, add audited quarantine recovery, and expand live communication evidence.
-
-* Sat Oct 24 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-2
-- Publish bounded Linux host telemetry through authenticated client heartbeats.
-
-* Wed Oct 21 2026 Nexora Engineering <engineering@nexora.local> - 19.0.0-1
-- Establish Ver19 release identity, Ver18 upgrade input, and documented rollback path.
-
-
-* Wed Oct 21 2026 Nexora Engineering <engineering@nexora.local> - 18.0.0-1
-- Fix one-second client telemetry publication, empty snapshots, and collection-error visibility.
-
-* Tue Oct 20 2026 Nexora Engineering <engineering@nexora.local> - 18.0.0-1
-- Add NURSF canonical real-time synchronization, subsystem monitoring, and Grafana-grade dashboards.
-
-* Mon Oct 19 2026 Nexora Engineering <engineering@nexora.local> - 16.0.0-2
-- Add durable Assurance execution, parser synthesis evidence, and expanded scenarios.
-
-* Sun Oct 18 2026 Nexora Engineering <engineering@nexora.local> - 16.0.0-1
-- Add deterministic bounded parser concurrency, V16 parser asset sync, and Vite WebApp release support
-
-* Fri Oct 16 2026 Nexora Engineering <engineering@nexora.local> - 14.0.0-1
-- Add AWS RHEL/Rocky wrappers, private VPC defaults, Cloudflare Tunnel, and hosted-WebApp deployment contracts
-
-* Tue Oct 13 2026 Nexora Engineering <engineering@nexora.local> - 12.0.0-1
-- Add enterprise bootstrap, family-isolated inputs/outputs, and corporate PKI setup
-
-* Sun Oct 11 2026 Nexora Engineering <engineering@nexora.local> - 12.0.0-5
-- Add durable exact-raw quarantine replay, parser selection, and permission repair
-
-* Sat Oct 10 2026 Nexora Engineering <engineering@nexora.local> - 12.0.0-4
-- Require an exact release identity and complete bundle checksum verification
-
-* Sat Oct 10 2026 Nexora Engineering <engineering@nexora.local> - 12.0.0-3
-- Validate distro-suffixed V12 RPM release metadata in guided installers
-
-* Wed Oct 07 2026 Nexora Engineering <engineering@nexora.local> - 12.0.0-1
-- Build Nexora Log Intelligence Ver12 from source with Supabase and Vercel delivery
-
-* Tue Oct 06 2026 Nexora Engineering <engineering@nexora.local> - 5.0.0-4
-- Rebuild client with the Supabase-backed controller release and exact private-IP acceptance evidence
-
-* Tue Oct 06 2026 Nexora Engineering <engineering@nexora.local> - 5.0.0-3
-- Remove the placeholder controller endpoint and add explicit TLS client onboarding
-- Provision the configured local input and start both managed-client services
-
-* Tue Oct 06 2026 Nexora Engineering <engineering@nexora.local> - 5.0.0-2
-- Rebuild client artifacts with the synchronized release-2 evidence set
-
-* Mon Oct 05 2026 Nexora Engineering <engineering@nexora.local> - 5.0.0-1
-- Build genuine source-derived v5 RPM with parser, service, config, and state payloads
-- Preserve configuration and state across upgrades and safe removal
+- Previous production baseline retained for upgrade and rollback acceptance.

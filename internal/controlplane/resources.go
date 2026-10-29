@@ -25,14 +25,14 @@ import (
 	"strings"
 	"time"
 
-	"nexora.local/nli-v19/internal/auditlog"
-	"nexora.local/nli-v19/internal/auth"
-	"nexora.local/nli-v19/internal/engine"
-	"nexora.local/nli-v19/internal/fleet"
-	"nexora.local/nli-v19/internal/middleware"
-	"nexora.local/nli-v19/internal/protocol"
-	metastore "nexora.local/nli-v19/internal/store"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/auditlog"
+	"nexora.local/nli-v20/internal/auth"
+	"nexora.local/nli-v20/internal/engine"
+	"nexora.local/nli-v20/internal/fleet"
+	"nexora.local/nli-v20/internal/middleware"
+	"nexora.local/nli-v20/internal/protocol"
+	metastore "nexora.local/nli-v20/internal/store"
+	"nexora.local/nli-v20/telemetry"
 )
 
 var semverPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$`)
@@ -1108,7 +1108,7 @@ func (s *Server) handleUpgrade(w http.ResponseWriter, r *http.Request) {
 			request.Name = "Upgrade " + fmt.Sprint(artifact["name"])
 		}
 	}
-	proposal := map[string]any{"name": request.Name, "type": rolloutType, "target_nodes": request.TargetNodes, "artifact_id": request.ArtifactID, "payload": map[string]any{"version": "19.0.0", "artifact_type": artifactType, "download_url": s.signedArtifactURL(r, request.ArtifactID), "checksum": artifact["sha256"], "size": artifact["size"], "media_type": artifact["media_type"]}, "approval_required": true}
+	proposal := map[string]any{"name": request.Name, "type": rolloutType, "target_nodes": request.TargetNodes, "artifact_id": request.ArtifactID, "payload": map[string]any{"version": "20.0.0", "artifact_type": artifactType, "download_url": s.signedArtifactURL(r, request.ArtifactID), "checksum": artifact["sha256"], "size": artifact["size"], "media_type": artifact["media_type"]}, "approval_required": true}
 	s.createRolloutProposal(w, r, principal, proposal)
 }
 
@@ -1255,27 +1255,35 @@ func (s *Server) approveRollout(w http.ResponseWriter, r *http.Request, id strin
 	_ = json.Unmarshal(doc.Payload, &proposal)
 	targets := interfaceStrings(proposal["target_nodes"])
 	var parserBundle *parserAssetBundle
+	var parserRolloutPayload any
 	if fmt.Sprint(proposal["type"]) == rolloutTypeParserSync {
-		var syncPayload struct {
-			Bundle     parserAssetBundle `json:"asset_bundle"`
-			BundleHash string            `json:"bundle_hash"`
+		// Decode the parser snapshot directly from the stored JSON. Going through
+		// map[string]any first converts numbers inside asset payloads to float64
+		// and re-encodes the RawMessage bytes, which can change the bundle digest
+		// (for example, 1.0 becomes 1) and can mutate the payload sent to clients.
+		var syncProposal struct {
+			BundleHash string `json:"bundle_hash"`
+			Payload    struct {
+				Bundle     parserAssetBundle `json:"asset_bundle"`
+				BundleHash string            `json:"bundle_hash"`
+			} `json:"payload"`
 		}
-		payloadBytes, _ := json.Marshal(proposal["payload"])
-		if json.Unmarshal(payloadBytes, &syncPayload) != nil || syncPayload.BundleHash == "" || syncPayload.Bundle.BundleHash != syncPayload.BundleHash {
+		if json.Unmarshal(doc.Payload, &syncProposal) != nil || syncProposal.BundleHash == "" || syncProposal.Payload.BundleHash != syncProposal.BundleHash || syncProposal.Payload.Bundle.BundleHash != syncProposal.BundleHash {
 			jsonError(w, "parser sync proposal has no exact bundle snapshot", http.StatusConflict)
 			return
 		}
-		hash, _, hashErr := bundleDigest(syncPayload.Bundle)
-		if hashErr != nil || hash != syncPayload.BundleHash {
+		hash, _, hashErr := bundleDigest(syncProposal.Payload.Bundle)
+		if hashErr != nil || hash != syncProposal.BundleHash {
 			jsonError(w, "parser sync proposal bundle hash is invalid", http.StatusConflict)
 			return
 		}
 		current, currentErr := s.buildActiveParserBundle(r.Context())
-		if currentErr != nil || current.BundleHash != syncPayload.BundleHash {
+		if currentErr != nil || current.BundleHash != syncProposal.BundleHash {
 			jsonError(w, "parser sync proposal is stale; create a rollout for the current published bundle", http.StatusConflict)
 			return
 		}
-		parserBundle = &syncPayload.Bundle
+		parserBundle = &syncProposal.Payload.Bundle
+		parserRolloutPayload = map[string]any{"asset_bundle": syncProposal.Payload.Bundle, "bundle_hash": syncProposal.BundleHash}
 	}
 	if len(targets) == 0 {
 		for _, node := range s.fleet.All() {
@@ -1302,6 +1310,9 @@ func (s *Server) approveRollout(w http.ResponseWriter, r *http.Request, id strin
 		return
 	}
 	payload := proposal["payload"]
+	if parserRolloutPayload != nil {
+		payload = parserRolloutPayload
+	}
 	live, err := s.rollouts.Create(fmt.Sprint(proposal["type"]), fmt.Sprint(proposal["name"]), doc.CreatedBy, targets, payload)
 	if err == nil {
 		err = s.rollouts.Start(live.ID, targets)

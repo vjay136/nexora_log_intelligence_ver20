@@ -1,9 +1,9 @@
-name: NLI V19 release
+name: NLI V20 release
 
 on:
   push:
     branches: [main]
-    tags: ['v19.*']
+    tags: ['v20.*']
   pull_request:
     paths:
       - 'packaging/**'
@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       previous_release_tag:
-        description: 'Optional existing V19 release tag containing genuine previous client/controller RPMs; defaults to the latest published release'
+        description: 'Optional Ver19 release tag containing genuine previous client/controller RPMs; defaults to v19.0.0-8'
         required: false
         type: string
 
@@ -54,7 +54,7 @@ jobs:
 
 
   release-candidate:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v19.')
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v20.')
     needs: infrastructure-static
     runs-on: ubuntu-24.04
     permissions:
@@ -70,8 +70,8 @@ jobs:
       - name: Download genuine previous release RPMs
         env:
           GH_TOKEN: ${{ github.token }}
-          PREVIOUS_RELEASE_TAG: ${{ inputs.previous_release_tag }}
-          PREVIOUS_RELEASE_REPO: ${{ github.repository }}
+          PREVIOUS_RELEASE_TAG: ${{ inputs.previous_release_tag || 'v19.0.0-8' }}
+          PREVIOUS_RELEASE_REPO: vjay136/nexora_log_intelligence_ver19
         run: |
           mkdir -p '${{ runner.temp }}/previous'
           previous_release_tag="$PREVIOUS_RELEASE_TAG"
@@ -81,7 +81,7 @@ jobs:
               --jq 'map(select(.isDraft == false and .isPrerelease == false)) | sort_by(.publishedAt) | reverse | .[0].tagName')
           fi
           if [[ -z "$previous_release_tag" || "$previous_release_tag" == "null" ]]; then
-            echo "No published previous V19 release is available in $PREVIOUS_RELEASE_REPO" >&2
+            echo "No published Ver19 release is available in $PREVIOUS_RELEASE_REPO" >&2
             exit 1
           fi
           echo "Using previous lifecycle baseline $PREVIOUS_RELEASE_REPO@$previous_release_tag"
@@ -101,17 +101,17 @@ jobs:
         run: make release-rocky OUTPUT_DIR='${{ runner.temp }}/nli-release' PREVIOUS_DIR='${{ runner.temp }}/previous'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; Node.js 24
         with:
-          name: nli-v19-unsigned-release
+          name: nli-v20-unsigned-release
           path: ${{ runner.temp }}/nli-release/
           if-no-files-found: error
           retention-days: 14
-      - name: Publish V19 GitHub release
-        if: startsWith(github.ref, 'refs/tags/v19.')
+      - name: Publish V20 GitHub release
+        if: startsWith(github.ref, 'refs/tags/v20.')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" '${{ runner.temp }}/nli-release/'* \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Nexora Log Intelligence Ver19 — $GITHUB_REF_NAME" \
+            --title "Nexora Log Intelligence Ver20 — $GITHUB_REF_NAME" \
             --notes-file docs/release/README.md \
             --latest

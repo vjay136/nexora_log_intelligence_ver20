@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"nexora.local/nli-v19/internal/confidence"
+	"nexora.local/nli-v20/internal/confidence"
 )
 
 func TestScoreAndRouteBoundaries(t *testing.T) {

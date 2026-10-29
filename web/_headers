@@ -11,13 +11,13 @@
 /app.js
   Cache-Control: public, max-age=0, must-revalidate
 
-/nexora-logo-v19.png
+/nexora-logo-v20.png
   Cache-Control: public, max-age=31536000, immutable
 
-/login-banner-v19.png
+/login-banner-v20.png
   Cache-Control: public, max-age=31536000, immutable
 
-/nexora-poster-v19.png
+/nexora-poster-v20.png
   Cache-Control: public, max-age=31536000, immutable
 
 /styles.css

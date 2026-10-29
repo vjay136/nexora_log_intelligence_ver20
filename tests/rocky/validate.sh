@@ -7,9 +7,9 @@ TEST_ROOT=${TEST_ROOT:-/tests}
 REQUIRE_PREVIOUS=${REQUIRE_PREVIOUS:-1}
 fail() { echo "Rocky validation: $*" >&2; exit 1; }
 
-client="$ARTIFACT_DIR/nli_client_ver19.rpm"
-alias="$ARTIFACT_DIR/nli_clinet_ver19.rpm"
-controller="$ARTIFACT_DIR/nli_controller_agent_ver19.rpm"
+client="$ARTIFACT_DIR/nli_client_ver20.rpm"
+alias="$ARTIFACT_DIR/nli_clinet_ver20.rpm"
+controller="$ARTIFACT_DIR/nli_controller_agent_ver20.rpm"
 for rpm_file in "$client" "$alias" "$controller"; do
   [[ -s $rpm_file ]] || fail "missing $(basename "$rpm_file")"
   [[ $(od -An -tx1 -N4 "$rpm_file" | tr -d ' \n') == edabeedb ]] || fail "invalid RPM magic: $(basename "$rpm_file")"
@@ -28,28 +28,14 @@ if [[ -n $previous_client && -n $previous_controller ]]; then
   [[ $(rpm -qp --qf '%{NAME}' "$previous_controller") == nli-controller-agent ]] || fail "previous controller RPM has unexpected package name"
   previous_client_version=$(rpm -qp --qf '%{VERSION}' "$previous_client")
   previous_controller_version=$(rpm -qp --qf '%{VERSION}' "$previous_controller")
-  [[ $previous_client_version == 19.0.0 ]] || fail "previous client must be a genuine earlier V19 RPM"
-  [[ $previous_controller_version == 19.0.0 ]] || fail "previous controller must be a genuine earlier V19 RPM"
+  [[ $previous_client_version == 19.0.0 ]] || fail "previous client must be a genuine Ver19 RPM"
+  [[ $previous_controller_version == 19.0.0 ]] || fail "previous controller must be a genuine Ver19 RPM"
   previous_client_nevra=$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "$previous_client")
   previous_controller_nevra=$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "$previous_controller")
   current_client_nevra=$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "$client")
   current_controller_nevra=$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "$controller")
   [[ $previous_client_nevra != "$current_client_nevra" ]] || fail "previous client RPM is identical to the release under test"
   [[ $previous_controller_nevra != "$current_controller_nevra" ]] || fail "previous controller RPM is identical to the release under test"
-  previous_client_release=$(rpm -qp --qf '%{RELEASE}' "$previous_client")
-  previous_controller_release=$(rpm -qp --qf '%{RELEASE}' "$previous_controller")
-  current_client_release=$(rpm -qp --qf '%{RELEASE}' "$client")
-  current_controller_release=$(rpm -qp --qf '%{RELEASE}' "$controller")
-  previous_client_release=${previous_client_release%%.*}
-  previous_controller_release=${previous_controller_release%%.*}
-  current_client_release=${current_client_release%%.*}
-  current_controller_release=${current_controller_release%%.*}
-  [[ $previous_client_release =~ ^[1-9][0-9]*$ ]] || fail "previous client RPM has an invalid release number"
-  [[ $previous_controller_release =~ ^[1-9][0-9]*$ ]] || fail "previous controller RPM has an invalid release number"
-  [[ $current_client_release =~ ^[1-9][0-9]*$ ]] || fail "current client RPM has an invalid release number"
-  [[ $current_controller_release =~ ^[1-9][0-9]*$ ]] || fail "current controller RPM has an invalid release number"
-  (( previous_client_release < current_client_release )) || fail "previous client RPM is not older than the release under test"
-  (( previous_controller_release < current_controller_release )) || fail "previous controller RPM is not older than the release under test"
   dnf -y install "$previous_client" "$previous_controller"
   install -d -o nli -g nli -m 0750 /var/lib/nli /var/lib/nli-controller
   echo pre-upgrade-client >/var/lib/nli/release-test.marker
@@ -62,8 +48,8 @@ else
   dnf -y install "$client" "$controller"
 fi
 
-[[ $(rpm -q --qf '%{VERSION}' nli-client) == 19.0.0 ]] || fail "client version is not 19.0.0"
-[[ $(rpm -q --qf '%{VERSION}' nli-controller-agent) == 19.0.0 ]] || fail "controller version is not 19.0.0"
+[[ $(rpm -q --qf '%{VERSION}' nli-client) == 20.0.0 ]] || fail "client version is not 20.0.0"
+[[ $(rpm -q --qf '%{VERSION}' nli-controller-agent) == 20.0.0 ]] || fail "controller version is not 20.0.0"
 release_marker="$ARTIFACT_DIR/RELEASE_ID"
 [[ -s $release_marker ]] || fail "RELEASE_ID is missing"
 expected_release=$(sed -n 's/^NLI_RELEASE=//p' "$release_marker")
@@ -188,10 +174,10 @@ systemctl is-active --quiet nli-agent || fail "agent did not restart after exact
 sleep 6
 [[ $(count_auto_records) == 49 ]] || fail "agent restart replayed already checkpointed input"
 
-[[ $(nli version) == 'nli 19.0.0' ]] || fail "CLI reports the wrong version"
-[[ $(nli-agent --version) == 'nli-agent 19.0.0' ]] || fail "agent reports the wrong version"
-[[ $(nli-client-control --version) == 'nli-client-control 19.0.0' ]] || fail "client-control reports the wrong version"
-[[ $(nli-controller-agent --version) == 'nli-control 19.0.0' ]] || fail "controller reports the wrong version"
+[[ $(nli version) == 'nli 20.0.0' ]] || fail "CLI reports the wrong version"
+[[ $(nli-agent --version) == 'nli-agent 20.0.0' ]] || fail "agent reports the wrong version"
+[[ $(nli-client-control --version) == 'nli-client-control 20.0.0' ]] || fail "client-control reports the wrong version"
+[[ $(nli-controller-agent --version) == 'nli-control 20.0.0' ]] || fail "controller reports the wrong version"
 
 nli parse --service smtp --multiline=false - <"$TEST_ROOT/release/smtp_input.txt" >/tmp/smtp-actual.json
 python3 - "$TEST_ROOT/release/smtp_expected.json" /tmp/smtp-actual.json <<'PY'
@@ -214,7 +200,7 @@ grep -Fxq 'Description=Nexora Log Intelligence - Main Controller' /usr/lib/syste
 ! grep -RIEq 'vjay-hacker|vijay-hacker|vja-hacker' /usr/lib/systemd/system/nli-*.service || fail "installed service contains an old GitHub owner"
 
 curl --fail --silent --show-error -D /tmp/health.headers -o /tmp/health.json http://127.0.0.1:12382/api/v1/health
-tr -d '\r' </tmp/health.headers | grep -Eiq '^X-NLI-Controller:[[:space:]]*v19$' || fail "health endpoint does not identify the NLI V19 controller"
+tr -d '\r' </tmp/health.headers | grep -Eiq '^X-NLI-Controller:[[:space:]]*v20$' || fail "health endpoint does not identify the NLI V20 controller"
 python3 - /tmp/health.json <<'PY'
 import json, pathlib, sys
 value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
@@ -223,7 +209,7 @@ assert value.get("api_version") == "v1"
 PY
 preflight_status=$(curl --silent --show-error -D /tmp/login-options.headers -o /dev/null -w '%{http_code}' -X OPTIONS http://127.0.0.1:12382/api/v1/auth/login)
 [[ $preflight_status == 204 ]] || fail "login preflight returned HTTP $preflight_status"
-tr -d '\r' </tmp/login-options.headers | grep -Eiq '^X-NLI-Controller:[[:space:]]*v19$' || fail "login preflight lacks controller identity"
+tr -d '\r' </tmp/login-options.headers | grep -Eiq '^X-NLI-Controller:[[:space:]]*v20$' || fail "login preflight lacks controller identity"
 grep -Eiq '^Allow:.*POST' /tmp/login-options.headers || fail "login preflight does not advertise POST"
 
 curl --fail --silent --show-error http://127.0.0.1:12382/ >/tmp/webview-index.html
@@ -239,7 +225,7 @@ grep -Fq '.auth-shell' /tmp/webview-styles.css || fail "premium WebView styles a
 grep -Fq 'const NAV' /tmp/webview-app.js || fail "WebView application script is missing"
 grep -Fq "method: 'OPTIONS'" /tmp/webview-app.js || fail "WebView does not verify the controller login contract"
 grep -Fq '<svg' /tmp/webview-logo.svg || fail "WebView logo is missing or invalid"
-[[ ! -e /usr/share/nli/webview_ver19/e2e.spec.js && ! -e /usr/share/nli/webview_ver19/package.json && ! -e /usr/share/nli/webview_ver19/playwright.config.js ]] || fail "development-only WebView files were installed"
+[[ ! -e /usr/share/nli/webview_ver20/e2e.spec.js && ! -e /usr/share/nli/webview_ver20/package.json && ! -e /usr/share/nli/webview_ver20/playwright.config.js ]] || fail "development-only WebView files were installed"
 curl --fail --silent --show-error -c /tmp/nli.cookies -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"ReleaseTestAdminPassword-2026"}' \
   http://127.0.0.1:12382/api/v1/auth/login >/tmp/login.json

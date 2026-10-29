@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"nexora.local/nli-v19/internal/protocol"
-	"nexora.local/nli-v19/internal/rollout"
-	"nexora.local/nli-v19/parser-policy"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/protocol"
+	"nexora.local/nli-v20/internal/rollout"
+	"nexora.local/nli-v20/parser-policy"
+	"nexora.local/nli-v20/telemetry"
 )
 
 type fakeExecutor struct {
@@ -120,6 +120,32 @@ func TestRunRetriesEnrollmentUntilControllerReady(t *testing.T) {
 	}
 	if token, readErr := os.ReadFile(filepath.Join(root, "node.token")); readErr != nil || strings.TrimSpace(string(token)) == "" {
 		t.Fatalf("successful retry did not persist a node token: token=%q err=%v", token, readErr)
+	}
+}
+
+func TestTelemetryRetryBackoffIsBoundedAndJittered(t *testing.T) {
+	for failures := 1; failures <= 12; failures++ {
+		delay := telemetryRetryDelay(time.Second, failures)
+		if delay < time.Second || delay >= 31*time.Second {
+			t.Fatalf("failure %d delay = %s, want 1s..31s", failures, delay)
+		}
+	}
+	if got := telemetryRetryDelay(time.Second, 0); got != time.Second {
+		t.Fatalf("healthy publication delay = %s, want 1s", got)
+	}
+}
+
+func TestControllerTransportPoolsBoundedConnections(t *testing.T) {
+	client, err := controllerHTTPClient(Config{ControllerURL: "https://controller.internal", CAFile: ""})
+	if err != nil {
+		t.Fatal(err)
+	}
+	transport, ok := client.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("transport type = %T", client.Transport)
+	}
+	if transport.MaxIdleConnsPerHost < 8 || transport.MaxConnsPerHost != 16 || transport.IdleConnTimeout < time.Minute {
+		t.Fatalf("controller transport is not fleet-bounded: %+v", transport)
 	}
 }
 

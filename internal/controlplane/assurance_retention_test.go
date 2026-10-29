@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	metastore "nexora.local/nli-v19/internal/store"
+	metastore "nexora.local/nli-v20/internal/store"
 )
 
 func TestAssuranceRetentionCannotBeBypassedByCallerID(t *testing.T) {

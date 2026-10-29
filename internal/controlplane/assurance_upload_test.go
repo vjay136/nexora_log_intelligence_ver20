@@ -17,7 +17,7 @@ import (
 	"strings"
 	"testing"
 
-	metastore "nexora.local/nli-v19/internal/store"
+	metastore "nexora.local/nli-v20/internal/store"
 )
 
 type uploadSupabaseMetadata struct{ metastore.Store }

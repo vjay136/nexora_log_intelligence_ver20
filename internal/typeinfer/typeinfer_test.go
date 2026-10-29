@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"nexora.local/nli-v19/internal/typeinfer"
+	"nexora.local/nli-v20/internal/typeinfer"
 )
 
 func TestInferRepresentativeValues(t *testing.T) {

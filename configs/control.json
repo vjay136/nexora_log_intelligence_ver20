@@ -1,7 +1,7 @@
 {
   "listen_address": "127.0.0.1:12382",
   "state_dir": "/var/lib/nli-control",
-  "web_dir": "/usr/share/nli/webview_ver19",
+  "web_dir": "/usr/share/nli/webview_ver20",
   "tls_cert": "",
   "tls_key": ""
 }

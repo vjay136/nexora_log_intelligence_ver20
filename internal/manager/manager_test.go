@@ -11,16 +11,16 @@ import (
 
 func TestRegistryOwnsSnapshotsAndMarksStaleClientsOffline(t *testing.T) {
 	r := NewRegistry()
-	original := &ClientInfo{Host: "client-a", Version: "19.0.0"}
+	original := &ClientInfo{Host: "client-a", Version: "20.0.0"}
 	r.Register(original)
 	original.Version = "mutated-after-register"
 
 	got := r.Get("client-a")
-	if got == nil || got.Version != "19.0.0" || !got.Online {
+	if got == nil || got.Version != "20.0.0" || !got.Online {
 		t.Fatalf("stored client = %#v", got)
 	}
 	got.Version = "mutated-after-get"
-	if again := r.Get("client-a"); again.Version != "19.0.0" {
+	if again := r.Get("client-a"); again.Version != "20.0.0" {
 		t.Fatalf("Get exposed registry state: %#v", again)
 	}
 
@@ -34,7 +34,7 @@ func TestRegistryOwnsSnapshotsAndMarksStaleClientsOffline(t *testing.T) {
 
 func TestManagerRegistrationAndClientAPI(t *testing.T) {
 	s := New(Config{})
-	register := httptest.NewRequest(http.MethodPost, "/api/v1/register", strings.NewReader(`{"host":"client-a","pid":42,"version":"19.0.0"}`))
+	register := httptest.NewRequest(http.MethodPost, "/api/v1/register", strings.NewReader(`{"host":"client-a","pid":42,"version":"20.0.0"}`))
 	registerResponse := httptest.NewRecorder()
 	s.mux.ServeHTTP(registerResponse, register)
 	if registerResponse.Code != http.StatusOK {

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"nexora.local/nli-v19/internal/eventstore"
-	"nexora.local/nli-v19/internal/output"
+	"nexora.local/nli-v20/internal/eventstore"
+	"nexora.local/nli-v20/internal/output"
 )
 
 // TestEndToEndV5Integration validates full v5 flow with controlplane

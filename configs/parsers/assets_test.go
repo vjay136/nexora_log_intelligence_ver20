@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	parserassets "nexora.local/nli-v19/configs/parsers"
+	parserassets "nexora.local/nli-v20/configs/parsers"
 )
 
 func TestEmbeddedParserPacksAreOrderedValidAndDefensive(t *testing.T) {

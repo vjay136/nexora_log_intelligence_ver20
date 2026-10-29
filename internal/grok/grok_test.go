@@ -3,7 +3,7 @@ package grok_test
 import (
 	"testing"
 
-	"nexora.local/nli-v19/internal/grok"
+	"nexora.local/nli-v20/internal/grok"
 )
 
 func TestCompileAndMatch(t *testing.T) {

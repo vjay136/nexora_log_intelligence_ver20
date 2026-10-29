@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"nexora.local/nli-v19/internal/fleet"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/fleet"
+	"nexora.local/nli-v20/telemetry"
 )
 
 func TestMetricHistoryMonotonicResetZeroAndHighCounts(t *testing.T) {

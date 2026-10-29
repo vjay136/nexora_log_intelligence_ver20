@@ -14,9 +14,9 @@ test('Vercel preflight checks DNS, Cloudflare health, login OPTIONS, and same-or
   const requested = [];
   globalThis.fetch = async (url, options) => {
     requested.push({ url: String(url), options });
-    if (String(url) === 'https://nli.example.net/api/v1/health') return new Response(JSON.stringify({ service: 'nli-controller-agent', api_version: 'v1' }), { status: 200, headers: { 'x-nli-controller': 'v19', 'cf-ray': 'test-ray' } });
-    if (String(url) === 'https://nli.example.net/api/v1/auth/login') return new Response(null, { status: 204, headers: { allow: 'POST, OPTIONS', 'x-nli-controller': 'v19', 'cache-control': 'no-store' } });
-    return new Response(JSON.stringify({ service: 'nli-controller-agent', api_version: 'v1' }), { status: 200, headers: { 'x-nli-controller': 'v19', 'x-nli-upstream': 'controller' } });
+    if (String(url) === 'https://nli.example.net/api/v1/health') return new Response(JSON.stringify({ service: 'nli-controller-agent', api_version: 'v1' }), { status: 200, headers: { 'x-nli-controller': 'v20', 'cf-ray': 'test-ray' } });
+    if (String(url) === 'https://nli.example.net/api/v1/auth/login') return new Response(null, { status: 204, headers: { allow: 'POST, OPTIONS', 'x-nli-controller': 'v20', 'cache-control': 'no-store' } });
+    return new Response(JSON.stringify({ service: 'nli-controller-agent', api_version: 'v1' }), { status: 200, headers: { 'x-nli-controller': 'v20', 'x-nli-upstream': 'controller' } });
   };
   t.after(() => { globalThis.fetch = originalFetch; });
   let lookedUp;

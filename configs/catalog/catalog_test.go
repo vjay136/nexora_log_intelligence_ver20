@@ -3,7 +3,7 @@ package catalog_test
 import (
 	"testing"
 
-	"nexora.local/nli-v19/configs/catalog"
+	"nexora.local/nli-v20/configs/catalog"
 )
 
 func TestEmbeddedCatalogIdentityAndFreshCopies(t *testing.T) {

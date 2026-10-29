@@ -29,6 +29,10 @@ func newHTTPClient(cfg Config) (*http.Client, error) {
 		}
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConns = 32
+	transport.MaxIdleConnsPerHost = 8
+	transport.MaxConnsPerHost = 16
+	transport.IdleConnTimeout = 90 * time.Second
 	if cfg.CAFile != "" {
 		pem, err := os.ReadFile(cfg.CAFile)
 		if err != nil {

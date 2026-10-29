@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast, platform-neutral V19 release invariants for the cached quick suite."""
+"""Fast, platform-neutral V20 release invariants for the cached quick suite."""
 
 from __future__ import annotations
 
@@ -16,26 +16,26 @@ def fail(message: str) -> None:
 root = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).parents[2]).resolve()
 
 required = (
-    "scripts/install-controller-ver19.sh",
-    "scripts/install-client-ver19.sh",
-    "scripts/install-controller-aws-ver19.sh",
-    "scripts/install-client-aws-ver19.sh",
-    "scripts/install-controller-aws-cloudflare-ver19.sh",
-    "scripts/setup-cloudflare-tunnel-v19.sh",
-    "scripts/verify-cloudflare-tunnel-v19.sh",
-    "scripts/uninstall-cloudflare-tunnel-v19.sh",
-    "scripts/cloudflare-quick-diagnosis-v19.sh",
+    "scripts/install-controller-ver20.sh",
+    "scripts/install-client-ver20.sh",
+    "scripts/install-controller-aws-ver20.sh",
+    "scripts/install-client-aws-ver20.sh",
+    "scripts/install-controller-aws-cloudflare-ver20.sh",
+    "scripts/setup-cloudflare-tunnel-v20.sh",
+    "scripts/verify-cloudflare-tunnel-v20.sh",
+    "scripts/uninstall-cloudflare-tunnel-v20.sh",
+    "scripts/cloudflare-quick-diagnosis-v20.sh",
     "scripts/vercel-preflight.mjs",
     "wrangler.jsonc",
-    "scripts/uninstall-controller-ver19.sh",
-    "scripts/uninstall-client-ver19.sh",
+    "scripts/uninstall-controller-ver20.sh",
+    "scripts/uninstall-client-ver20.sh",
     "scripts/release/create-bundle.sh",
-    "configs/parser-catalog/nli-v19-parser-catalog.json",
-    "configs/catalog/nli-v19-parser-catalog.json",
+    "configs/parser-catalog/nli-v20-parser-catalog.json",
+    "configs/catalog/nli-v20-parser-catalog.json",
     "testdata/migration/sample-logs/manifest.json",
-    "docs/V19_AWS_RED_HAT_INSTALLATION.md",
-    "docs/V19_CLOUDFLARE_TUNNEL.md",
-    "docs/release/V19_MIGRATION_AND_ROLLBACK.md",
+    "docs/V20_AWS_RED_HAT_INSTALLATION.md",
+    "docs/V20_CLOUDFLARE_TUNNEL.md",
+    "docs/release/V20_MIGRATION_AND_ROLLBACK.md",
     "docs/VERCEL_DEPLOYMENT.md",
     "docs/CLOUDFLARE_PAGES_DEPLOYMENT.md",
     "docs/TESTING.md",
@@ -52,7 +52,7 @@ required = (
 )
 for name in required:
     if not (root / name).is_file():
-        fail(f"missing V19 release input: {name}")
+        fail(f"missing V20 release input: {name}")
 
 scan_roots = ("README.md", "docs", "packaging", "scripts", "web", ".github")
 files: list[Path] = []
@@ -67,7 +67,7 @@ for name in scan_roots:
         if candidate.is_file():
             files.append(candidate)
 
-wrong_product = "Nexora Log Inetelligence V19"
+wrong_product = "Nexora Log Inetelligence V20"
 publishable_key_pattern = re.compile(r"sb_publishable_[A-Za-z0-9_-]{20,}")
 live_project_pattern = re.compile(r"https://[a-z0-9]{20}\.supabase\.co", re.IGNORECASE)
 allowed_history = {
@@ -75,10 +75,10 @@ allowed_history = {
     root / "CHANGELOG.md",
     root / "README.md",
     root / ".github/workflows/release.yml",
-    root / "docs/V19_ACCEPTANCE_CHECKLIST.md",
-    root / "docs/V19_ENGINEERING_AUDIT.md",
-    root / "docs/V19_SUPPORT_MATRIX.md",
-    root / "docs/V19_MASTER_SPEC_IMPLEMENTATION_MATRIX.md",
+    root / "docs/V20_ACCEPTANCE_CHECKLIST.md",
+    root / "docs/V20_ENGINEERING_AUDIT.md",
+    root / "docs/V20_SUPPORT_MATRIX.md",
+    root / "docs/V20_MASTER_SPEC_IMPLEMENTATION_MATRIX.md",
     root / "docs/release/README.md",
 }
 # Versioned baseline documents remain immutable evidence for upgrade and
@@ -105,10 +105,10 @@ for path in files:
     if live_project_pattern.search(text):
         fail(f"live Supabase project URL was committed in {path.relative_to(root)}")
 
-catalog_a = (root / "configs/parser-catalog/nli-v19-parser-catalog.json").read_bytes()
-catalog_b = (root / "configs/catalog/nli-v19-parser-catalog.json").read_bytes()
+catalog_a = (root / "configs/parser-catalog/nli-v20-parser-catalog.json").read_bytes()
+catalog_b = (root / "configs/catalog/nli-v20-parser-catalog.json").read_bytes()
 if catalog_a != catalog_b:
-    fail("canonical and embedded V19 parser catalogs differ")
+    fail("canonical and embedded V20 parser catalogs differ")
 
 manifest = json.loads((root / "testdata/migration/sample-logs/manifest.json").read_text(encoding="utf-8"))
 if manifest.get("sample_log_record_count") != 728:
@@ -133,22 +133,20 @@ if "REQUIRE_PREVIOUS=0" in workflow:
 
 rocky_validation = (root / "tests/rocky/validate.sh").read_text(encoding="utf-8")
 for marker in (
-    "previous client must be a genuine earlier V19 RPM",
-    "previous controller must be a genuine earlier V19 RPM",
-    "previous_client_release < current_client_release",
-    "previous_controller_release < current_controller_release",
+    "previous client must be a genuine Ver19 RPM",
+    "previous controller must be a genuine Ver19 RPM",
 ):
     if marker not in rocky_validation:
         fail(f"Rocky lifecycle validation is missing previous-release gate {marker!r}")
-if "genuine V18 RPM" in rocky_validation:
-    fail("Rocky lifecycle validation still hard-codes the obsolete V18 baseline")
+if "genuine earlier V20 RPM" in rocky_validation:
+    fail("Rocky lifecycle validation incorrectly expects a prior Ver20 package for the initial Ver20 release")
 
-research_ledger = (root / "docs/V19_RESEARCH_AND_LICENSE_LEDGER.md").read_text(encoding="utf-8")
+research_ledger = (root / "docs/V20_RESEARCH_AND_LICENSE_LEDGER.md").read_text(encoding="utf-8")
 if "| **Total** | **100** |" not in research_ledger:
     fail("research ledger does not prove the required exact total of 100 reviews")
 for batch in range(1, 8):
-    name = f"docs/research/V19_RESEARCH_GAP_D{batch}.md"
-    if not (root / name).is_file() or f"`research/V19_RESEARCH_GAP_D{batch}.md`" not in research_ledger:
+    name = f"docs/research/V20_RESEARCH_GAP_D{batch}.md"
+    if not (root / name).is_file() or f"`research/V20_RESEARCH_GAP_D{batch}.md`" not in research_ledger:
         fail(f"research evidence batch is missing from the consolidated ledger: {name}")
 
 for installer_name in required[:2]:
@@ -162,4 +160,4 @@ for installer_name in required[:2]:
         if marker not in installer:
             fail(f"{installer_name} is missing mixed-release protection {marker!r}")
 
-print("V19 quick static release invariants: PASS")
+print("V20 quick static release invariants: PASS")

@@ -30,13 +30,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"nexora.local/nli-v19/internal/agent"
-	"nexora.local/nli-v19/internal/engine"
-	"nexora.local/nli-v19/internal/protocol"
-	"nexora.local/nli-v19/internal/registry"
-	"nexora.local/nli-v19/internal/rollout"
-	"nexora.local/nli-v19/parser-policy"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/agent"
+	"nexora.local/nli-v20/internal/engine"
+	"nexora.local/nli-v20/internal/protocol"
+	"nexora.local/nli-v20/internal/registry"
+	"nexora.local/nli-v20/internal/rollout"
+	"nexora.local/nli-v20/parser-policy"
+	"nexora.local/nli-v20/telemetry"
 )
 
 const maxPackageBytes = 512 * 1024 * 1024
@@ -165,6 +165,14 @@ func (c Config) validate() error {
 
 func controllerHTTPClient(cfg Config) (*http.Client, error) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+	// Keep controller connections pooled per client. Across a 1,000-node fleet
+	// this avoids a TLS handshake for every one-second telemetry publication,
+	// while the per-process cap prevents a failed controller from accumulating
+	// unbounded connections.
+	transport.MaxIdleConns = 32
+	transport.MaxIdleConnsPerHost = 8
+	transport.MaxConnsPerHost = 16
+	transport.IdleConnTimeout = 90 * time.Second
 	if cfg.CAFile != "" {
 		pemData, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
@@ -242,18 +250,26 @@ func New(cfg Config, executor Executor) (*Client, error) {
 func (c *Client) Run(ctx context.Context) error {
 	var streamReady atomic.Bool
 	go func() {
-		ticker := time.NewTicker(time.Duration(c.cfg.TelemetryPollSeconds) * time.Second)
-		defer ticker.Stop()
+		interval := time.Duration(c.cfg.TelemetryPollSeconds) * time.Second
+		timer := time.NewTimer(telemetryJitter(interval))
+		defer timer.Stop()
+		failures := 0
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-ticker.C:
+			case <-timer.C:
+				next := interval
 				if streamReady.Load() {
 					if err := c.sendStreamTelemetry(ctx); err != nil && !errors.Is(err, context.Canceled) {
+						failures++
 						fmt.Fprintf(os.Stderr, "nli-client-control: stream telemetry pending: %v\n", err)
+						next = telemetryRetryDelay(interval, failures)
+					} else {
+						failures = 0
 					}
 				}
+				timer.Reset(next)
 			}
 		}
 	}()
@@ -277,6 +293,41 @@ func (c *Client) Run(ctx context.Context) error {
 		case <-timer.C:
 		}
 	}
+}
+
+func telemetryJitter(limit time.Duration) time.Duration {
+	if limit <= 0 {
+		return 0
+	}
+	var random [8]byte
+	if _, err := rand.Read(random[:]); err != nil {
+		return limit / 2
+	}
+	var value uint64
+	for _, octet := range random {
+		value = value<<8 | uint64(octet)
+	}
+	return time.Duration(value % uint64(limit))
+}
+
+func telemetryRetryDelay(interval time.Duration, failures int) time.Duration {
+	if interval <= 0 {
+		interval = time.Second
+	}
+	if failures < 1 {
+		return interval
+	}
+	shift := failures - 1
+	if shift > 5 {
+		shift = 5
+	}
+	delay := interval * time.Duration(1<<shift)
+	if delay > 30*time.Second {
+		delay = 30 * time.Second
+	}
+	// Add up to one publication interval of jitter so a recovered controller is
+	// not hit by every enrolled client in the same scheduler tick.
+	return delay + telemetryJitter(interval)
 }
 
 // RunOnce sends one heartbeat and applies at most one leased command.

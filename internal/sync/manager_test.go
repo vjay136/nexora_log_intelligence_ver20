@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"nexora.local/nli-v19/internal/protocol"
+	"nexora.local/nli-v20/internal/protocol"
 )
 
 func signedManifest(t *testing.T, revision uint64) (protocol.ImmutableManifest, map[string]ed25519.PublicKey, time.Time) {

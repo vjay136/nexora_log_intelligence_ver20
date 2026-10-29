@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"nexora.local/nli-v19/internal/auditlog"
-	"nexora.local/nli-v19/internal/middleware"
-	metastore "nexora.local/nli-v19/internal/store"
+	"nexora.local/nli-v20/internal/auditlog"
+	"nexora.local/nli-v20/internal/middleware"
+	metastore "nexora.local/nli-v20/internal/store"
 )
 
 const (

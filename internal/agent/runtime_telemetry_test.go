@@ -2,7 +2,7 @@ package agent
 
 import (
 	"bytes"
-	"io"
+	"encoding/json"
 	"log/slog"
 	"strings"
 	"testing"
@@ -51,14 +51,35 @@ func TestJournalProgressIsAggregatedAndOutputRecoveryIsTransitionOnly(t *testing
 	slog.SetDefault(slog.New(slog.NewJSONHandler(&output, nil)))
 	defer slog.SetDefault(previousLogger)
 	journal := newJournal(time.Hour)
-	journal.progress("/source.log", journalCounts{read: 100, parsed: 90, quarantined: 10})
-	journal.progress("/source.log", journalCounts{read: 101, parsed: 91, quarantined: 10})
+	journal.progress("/source.log", "eof_wait", journalCounts{read: 100, parsed: 90, quarantined: 10, bytes: 1000})
+	journal.progress("/source.log", "eof_wait", journalCounts{read: 101, parsed: 91, quarantined: 10, bytes: 1010})
+	journal.progress("/source.log", "reading", journalCounts{read: 101, parsed: 91, quarantined: 10, bytes: 1010})
+	journal.progress("/source.log", "reading", journalCounts{read: 101, parsed: 91, quarantined: 10, bytes: 1010})
+	journal.progress("/source.log", "eof_wait", journalCounts{read: 101, parsed: 91, quarantined: 10, bytes: 1010})
 	journal.outputFailure("/source.log", "disk unavailable")
 	journal.outputRecovered("/source.log")
 	journal.outputRecovered("/source.log")
 	lines := strings.Split(strings.TrimSpace(output.String()), "\n")
-	if len(lines) != 5 { // progress + parsed + quarantined + failure + recovery
-		t.Fatalf("journal emitted %d events, want one aggregate and one failure/recovery transition: %s", len(lines), output.String())
+	if len(lines) != 5 { // initial summary + two phase changes + failure + recovery
+		t.Fatalf("journal emitted %d events, want bounded summaries and one failure/recovery transition: %s", len(lines), output.String())
 	}
-	_ = io.Discard
+	var initial, active, complete map[string]any
+	if json.Unmarshal([]byte(lines[0]), &initial) != nil || json.Unmarshal([]byte(lines[1]), &active) != nil || json.Unmarshal([]byte(lines[2]), &complete) != nil {
+		t.Fatalf("journal progress is not valid structured JSON: %s", output.String())
+	}
+	if initial["phase"] != "eof_wait" || initial["processed_total"] != float64(100) || initial["read_total"] != float64(100) || initial["bytes_total"] != float64(1000) {
+		t.Fatalf("initial cumulative progress is incomplete: %#v", initial)
+	}
+	if active["phase"] != "reading" || active["active"] != true || active["read_delta"] != float64(1) || active["processed_delta"] != float64(1) {
+		t.Fatalf("active transition did not retain accumulated deltas: %#v", active)
+	}
+	if complete["phase"] != "eof_wait" || complete["complete_to_eof"] != true || complete["processed_total"] != float64(101) {
+		t.Fatalf("EOF completion summary is incomplete: %#v", complete)
+	}
+}
+
+func TestCounterDeltaHandlesCounterReset(t *testing.T) {
+	if got := counterDelta(3, 10); got != 3 {
+		t.Fatalf("counter reset delta = %d, want 3", got)
+	}
 }

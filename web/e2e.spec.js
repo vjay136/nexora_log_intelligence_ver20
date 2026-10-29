@@ -116,7 +116,7 @@ test('premium login loads runtime assets and rejects invalid credentials', async
   await expect(page.getByTestId('nav-operations')).toBeVisible();
 });
 
-test('V19 blank-panel regressions: every workspace renders authenticated controller responses', async ({ page }) => {
+test('V20 blank-panel regressions: every workspace renders authenticated controller responses', async ({ page }) => {
   // This single regression walks every authenticated workspace and validates
   // each API contract.  Give the packaged two-node gate enough time on a
   // cold, resource-constrained CI/Docker host without weakening per-action
@@ -131,7 +131,7 @@ test('V19 blank-panel regressions: every workspace renders authenticated control
     if (path.startsWith('/api/v1/') && response.ok()) successfulAPIs.add(path);
   });
   // Authentication bootstraps canonical sync before the response listener is
-  // registered. Fetch it once here so this test explicitly proves the V19
+  // registered. Fetch it once here so this test explicitly proves the V20
   // source-of-truth contract instead of requiring the legacy dashboard poll.
   const syncStatus = await page.evaluate(async () => {
     const response = await fetch('/api/v1/sync/snapshot', { credentials: 'same-origin' });

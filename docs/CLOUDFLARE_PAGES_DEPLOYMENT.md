@@ -14,7 +14,7 @@ Cloudflare Pages:  https://nli.example.com
 
 ## Git-connected deployment
 
-1. Create a Cloudflare Pages project from the private V19 GitHub repository.
+1. Create a Cloudflare Pages project from the private V20 GitHub repository.
 2. Set the production branch to `main`.
 3. Use build command `node scripts/build-webapp.mjs` and output directory
    `build/web-public`. Keep the repository root as the root directory.
@@ -45,7 +45,7 @@ curl -fsS https://nli.example.com/api/v1/health
 ```
 
 The Pages response must include `X-NLI-Upstream: controller` and
-`X-NLI-Controller: v19`. A redirect, Cloudflare Access login page, 403, or HTML
+`X-NLI-Controller: v20`. A redirect, Cloudflare Access login page, 403, or HTML
 response means the Pages Function cannot reach the API contract. Configure an
 approved Cloudflare route that permits the server-to-server proxy while NLI's
 own authentication and RBAC protect application operations.

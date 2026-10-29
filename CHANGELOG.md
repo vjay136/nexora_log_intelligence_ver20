@@ -1,5 +1,14 @@
 # Changelog
 
+## [20.0.0-1] - 2026-10-29
+
+- Preserve parser asset bytes through independent rollout approval so the approved bundle hash remains verifiable and deployable.
+- Make the Quarantine Resolution Wizard a focused nine-stage workflow with evidence-backed mapping, deterministic tests, independent approval, exact client acknowledgement, replay, verification, rollback, and offboarding.
+- Group quarantine failures only by controller-verified signatures; isolate records when shared cause is unverified.
+- Publish structured per-source journal progress and surface active file, processed, parsed, quarantined, error, byte, and phase counters in live WebView workspaces.
+- Keep synchronization streams alive with rolling SSE deadlines, jittered bounded reconnects, shared HTTP transports, TLS 1.2 minimums, and transactional client trust updates suitable for large fleets.
+- Promote Ver19 release 8 to the explicit upgrade and rollback baseline for the initial Ver20 release.
+
 ## [19.0.0-8] - 2026-10-28
 
 - Turn Quarantine Resolution Wizard stages 6–9 into one guided Test, Review, Rollout, Replay, and Verify control flow with a state-derived next action.

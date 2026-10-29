@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"nexora.local/nli-v19/internal/registry"
+	"nexora.local/nli-v20/internal/registry"
 )
 
 func testParser() *registry.ParserDef {

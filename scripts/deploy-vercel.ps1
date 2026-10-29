@@ -142,8 +142,8 @@ try {
     throw "The controller origin is valid but its health endpoint is unreachable or incompatible: $healthUrl`nCheck public DNS, TLS, reverse-proxy/tunnel routing, and firewall policy.`nUnderlying error: $($_.Exception.Message)"
 }
 $healthIdentity = [string]$response.Headers['X-NLI-Controller']
-if ($response.StatusCode -ne 200 -or $healthIdentity -ne 'v19' -or $health.service -ne 'nli-controller-agent' -or $health.api_version -ne 'v1' -or -not $response.Headers['CF-RAY']) {
-    throw "The public endpoint is not an NLI v19 controller: $healthUrl"
+if ($response.StatusCode -ne 200 -or $healthIdentity -ne 'v20' -or $health.service -ne 'nli-controller-agent' -or $health.api_version -ne 'v1' -or -not $response.Headers['CF-RAY']) {
+    throw "The public endpoint is not an NLI v20 controller: $healthUrl"
 }
 
 $loginUrl = "$ControllerOrigin/api/v1/auth/login"
@@ -154,8 +154,8 @@ try {
 }
 $loginIdentity = [string]$preflight.Headers['X-NLI-Controller']
 $allowedMethods = @(([string]$preflight.Headers['Allow']) -split ',' | ForEach-Object { $_.Trim().ToUpperInvariant() })
-if ($preflight.StatusCode -ne 204 -or $loginIdentity -ne 'v19' -or -not $allowedMethods.Contains('POST')) {
-    throw 'The public endpoint does not expose the compatible NLI v19 login contract.'
+if ($preflight.StatusCode -ne 204 -or $loginIdentity -ne 'v20' -or -not $allowedMethods.Contains('POST')) {
+    throw 'The public endpoint does not expose the compatible NLI v20 login contract.'
 }
 
 Push-Location $Root

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -22,20 +23,20 @@ import (
 	"sync"
 	"time"
 
-	"nexora.local/nli-v19/internal/adapter"
-	"nexora.local/nli-v19/internal/auditlog"
-	"nexora.local/nli-v19/internal/auth"
-	"nexora.local/nli-v19/internal/corpusevidence"
-	"nexora.local/nli-v19/internal/engine"
-	"nexora.local/nli-v19/internal/eventstore"
-	"nexora.local/nli-v19/internal/fleet"
-	"nexora.local/nli-v19/internal/middleware"
-	"nexora.local/nli-v19/internal/nupire"
-	"nexora.local/nli-v19/internal/protocol"
-	"nexora.local/nli-v19/internal/registry"
-	metastore "nexora.local/nli-v19/internal/store"
-	"nexora.local/nli-v19/internal/wsrelay"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/adapter"
+	"nexora.local/nli-v20/internal/auditlog"
+	"nexora.local/nli-v20/internal/auth"
+	"nexora.local/nli-v20/internal/corpusevidence"
+	"nexora.local/nli-v20/internal/engine"
+	"nexora.local/nli-v20/internal/eventstore"
+	"nexora.local/nli-v20/internal/fleet"
+	"nexora.local/nli-v20/internal/middleware"
+	"nexora.local/nli-v20/internal/nupire"
+	"nexora.local/nli-v20/internal/protocol"
+	"nexora.local/nli-v20/internal/registry"
+	metastore "nexora.local/nli-v20/internal/store"
+	"nexora.local/nli-v20/internal/wsrelay"
+	"nexora.local/nli-v20/telemetry"
 )
 
 type Config struct {
@@ -461,7 +462,7 @@ func (s *Server) Close() error {
 	return nil
 }
 func (s *Server) ListenAndServe() error {
-	server := &http.Server{Addr: s.cfg.ListenAddress, Handler: s.Mux(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 60 * time.Second, IdleTimeout: 120 * time.Second, MaxHeaderBytes: 32 << 10}
+	server := &http.Server{Addr: s.cfg.ListenAddress, Handler: s.Mux(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 60 * time.Second, IdleTimeout: 120 * time.Second, MaxHeaderBytes: 32 << 10, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}}
 	if s.cfg.TLSCert != "" {
 		return server.ListenAndServeTLS(s.cfg.TLSCert, s.cfg.TLSKey)
 	}
@@ -633,7 +634,7 @@ func jsonError(w http.ResponseWriter, message string, status int) {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("X-NLI-Controller", "v19")
+	w.Header().Set("X-NLI-Controller", "v20")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Allow", "POST, OPTIONS")
 	if r.Method == http.MethodOptions {
@@ -742,7 +743,7 @@ func (s *Server) handleNodeRegister(w http.ResponseWriter, r *http.Request) {
 	// Initial enrollment sync uses the same independent rollout approval gate
 	// as every other parser bundle rollout.
 	if bundle, err := s.buildActiveParserBundle(r.Context()); err == nil {
-		_, _ = s.proposeParserBundleRollout(r.Context(), "nli-v19-auto-enrollment", "Initial parser asset synchronization", "Initial parser synchronization for a newly enrolled client requires independent rollout approval.", "selected", bundle, []string{request.ID})
+		_, _ = s.proposeParserBundleRollout(r.Context(), "nli-v20-auto-enrollment", "Initial parser asset synchronization", "Initial parser synchronization for a newly enrolled client requires independent rollout approval.", "selected", bundle, []string{request.ID})
 	}
 	jsonCreated(w, protocol.RegisterResponse{Status: "registered", NodeID: request.ID, NodeToken: token})
 }
@@ -1106,7 +1107,7 @@ func countActive(items []*rolloutRecord) int {
 	return count
 }
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("X-NLI-Controller", "v19")
+	w.Header().Set("X-NLI-Controller", "v20")
 	w.Header().Set("Cache-Control", "no-store")
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET")

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	parsercatalog "nexora.local/nli-v19/configs/catalog"
-	metastore "nexora.local/nli-v19/internal/store"
+	parsercatalog "nexora.local/nli-v20/configs/catalog"
+	metastore "nexora.local/nli-v20/internal/store"
 )
 
 var catalogCollections = map[string]string{
@@ -30,15 +30,15 @@ func seedBuiltinCatalog(ctx context.Context, store metastore.Store) error {
 		}
 		payload, err := json.Marshal(map[string]any{
 			"name": asset.Name, "config": asset.Config,
-			"review_state": "active", "approved_by": "nli-v19-release",
-			"published_by": "nli-v19-release",
+			"review_state": "active", "approved_by": "nli-v20-release",
+			"published_by": "nli-v20-release",
 		})
 		if err != nil {
 			return err
 		}
 		// The embedded catalog is part of the tested, signed release. Treat it as
 		// pre-approved so a fresh controller immediately has a deployable baseline.
-		if _, err := store.Put(ctx, metastore.Document{Collection: collection, ID: asset.ID, State: "active", Payload: payload, CreatedBy: "nli-v19-release"}); err != nil {
+		if _, err := store.Put(ctx, metastore.Document{Collection: collection, ID: asset.ID, State: "active", Payload: payload, CreatedBy: "nli-v20-release"}); err != nil {
 			return err
 		}
 	}

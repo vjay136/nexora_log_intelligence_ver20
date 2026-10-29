@@ -39,7 +39,7 @@ After deployment, check the public controller first, then the Vercel proxy:
 npm run vercel:preflight -- --app-url https://your-app.vercel.app
 ```
 
-The preflight checks the controller's `/api/v1/health` identity and service payload, confirms the hostname response carries Cloudflare's `CF-RAY`, verifies `/api/v1/auth/login` responds to `OPTIONS` with `POST`, `OPTIONS`, `X-NLI-Controller`, and `Cache-Control: no-store`, and optionally checks the deployed Vercel `/api/v1/health` same-origin proxy headers. It prints only pass/fail diagnostics; it never prints response bodies, cookies, or authorization headers. A successful check means the configured public route is reaching the expected V19 controller API contract.
+The preflight checks the controller's `/api/v1/health` identity and service payload, confirms the hostname response carries Cloudflare's `CF-RAY`, verifies `/api/v1/auth/login` responds to `OPTIONS` with `POST`, `OPTIONS`, `X-NLI-Controller`, and `Cache-Control: no-store`, and optionally checks the deployed Vercel `/api/v1/health` same-origin proxy headers. It prints only pass/fail diagnostics; it never prints response bodies, cookies, or authorization headers. A successful check means the configured public route is reaching the expected V20 controller API contract.
 
 ### Cloudflare Access caveat
 

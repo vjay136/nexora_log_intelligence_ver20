@@ -36,7 +36,7 @@ export async function runPreflight({ origin, appUrl, lookupImpl = assertPublicDN
   const controller = validateOrigin(origin);
   await lookupImpl(controller.hostname);
   const health = await fetchChecked(new URL('/api/v1/health', controller), { headers: { accept: 'application/json' } });
-  if (!health.ok || health.headers.get('x-nli-controller') !== 'v19') throw new Error('Controller health contract failed (expected HTTP 200 and X-NLI-Controller v19).');
+  if (!health.ok || health.headers.get('x-nli-controller') !== 'v20') throw new Error('Controller health contract failed (expected HTTP 200 and X-NLI-Controller v20).');
   let payload;
   try { payload = await health.json(); } catch { throw new Error('Controller health response was not valid JSON.'); }
   if (payload.service !== 'nli-controller-agent' || payload.api_version !== 'v1') throw new Error('Controller health payload is incompatible.');
@@ -44,7 +44,7 @@ export async function runPreflight({ origin, appUrl, lookupImpl = assertPublicDN
 
   const login = await fetchChecked(new URL('/api/v1/auth/login', controller), { method: 'OPTIONS', headers: { accept: 'application/json' } });
   const allowed = (login.headers.get('allow') || '').split(',').map(value => value.trim().toUpperCase());
-  if (login.status !== 204 || !allowed.includes('POST') || !allowed.includes('OPTIONS') || login.headers.get('x-nli-controller') !== 'v19' || login.headers.get('cache-control') !== 'no-store') {
+  if (login.status !== 204 || !allowed.includes('POST') || !allowed.includes('OPTIONS') || login.headers.get('x-nli-controller') !== 'v20' || login.headers.get('cache-control') !== 'no-store') {
     throw new Error('Controller login OPTIONS contract failed; preserve OPTIONS, Allow, X-NLI-Controller, and Cache-Control through Cloudflare.');
   }
 
@@ -53,7 +53,7 @@ export async function runPreflight({ origin, appUrl, lookupImpl = assertPublicDN
     try { app = new URL(appUrl); } catch { throw new Error('Optional --app-url must be an absolute HTTPS deployment URL.'); }
     if (app.protocol !== 'https:' || app.username || app.password || app.search || app.hash || app.pathname !== '/') throw new Error('--app-url must be an HTTPS origin.');
     const proxied = await fetchChecked(new URL('/api/v1/health', app), { headers: { accept: 'application/json' } });
-    if (!proxied.ok || proxied.headers.get('x-nli-upstream') !== 'controller' || proxied.headers.get('x-nli-controller') !== 'v19') {
+    if (!proxied.ok || proxied.headers.get('x-nli-upstream') !== 'controller' || proxied.headers.get('x-nli-controller') !== 'v20') {
       throw new Error('Vercel same-origin proxy health contract failed; check the production environment variable and redeploy.');
     }
     console.log('Vercel same-origin /api/v1/health proxy contract: passed.');

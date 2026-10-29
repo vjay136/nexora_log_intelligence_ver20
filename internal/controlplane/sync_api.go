@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"time"
 
-	"nexora.local/nli-v19/internal/engine"
-	"nexora.local/nli-v19/internal/fleet"
-	metastore "nexora.local/nli-v19/internal/store"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/engine"
+	"nexora.local/nli-v20/internal/fleet"
+	metastore "nexora.local/nli-v20/internal/store"
+	"nexora.local/nli-v20/telemetry"
 )
 
 func (s *Server) handleSyncSnapshot(w http.ResponseWriter, r *http.Request) {

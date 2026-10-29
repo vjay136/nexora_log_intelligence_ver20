@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"nexora.local/nli-v19/internal/rollout"
+	"nexora.local/nli-v20/internal/rollout"
 )
 
 func tmpRollout(t *testing.T) *rollout.Manager {

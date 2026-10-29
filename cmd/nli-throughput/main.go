@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"nexora.local/nli-v19/internal/agent"
-	"nexora.local/nli-v19/internal/output"
+	"nexora.local/nli-v20/internal/agent"
+	"nexora.local/nli-v20/internal/output"
 )
 
 const maxGeneratedLineBytes = 1 << 20
@@ -103,7 +103,7 @@ func main() {
 	}
 	ownedTemp := false
 	if workDir == "" {
-		workDir, err = os.MkdirTemp("", "nli-v19-throughput-")
+		workDir, err = os.MkdirTemp("", "nli-v20-throughput-")
 		if err != nil {
 			fatalf("create work directory: %v", err)
 		}

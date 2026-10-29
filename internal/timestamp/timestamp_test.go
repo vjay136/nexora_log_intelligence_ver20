@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	ts "nexora.local/nli-v19/internal/timestamp"
+	ts "nexora.local/nli-v20/internal/timestamp"
 )
 
 var ingest = time.Date(2026, 10, 2, 10, 0, 0, 0, time.UTC)

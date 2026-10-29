@@ -22,20 +22,20 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"nexora.local/nli-v19/internal/adapter"
-	"nexora.local/nli-v19/internal/ai"
-	"nexora.local/nli-v19/internal/drain"
-	"nexora.local/nli-v19/internal/engine"
-	"nexora.local/nli-v19/internal/enrichment"
-	"nexora.local/nli-v19/internal/familyprofile"
-	"nexora.local/nli-v19/internal/masker"
-	"nexora.local/nli-v19/internal/multiline"
-	"nexora.local/nli-v19/internal/output"
-	"nexora.local/nli-v19/internal/quarantine"
-	"nexora.local/nli-v19/internal/registry"
-	"nexora.local/nli-v19/internal/routing"
-	"nexora.local/nli-v19/internal/upes"
-	"nexora.local/nli-v19/telemetry"
+	"nexora.local/nli-v20/internal/adapter"
+	"nexora.local/nli-v20/internal/ai"
+	"nexora.local/nli-v20/internal/drain"
+	"nexora.local/nli-v20/internal/engine"
+	"nexora.local/nli-v20/internal/enrichment"
+	"nexora.local/nli-v20/internal/familyprofile"
+	"nexora.local/nli-v20/internal/masker"
+	"nexora.local/nli-v20/internal/multiline"
+	"nexora.local/nli-v20/internal/output"
+	"nexora.local/nli-v20/internal/quarantine"
+	"nexora.local/nli-v20/internal/registry"
+	"nexora.local/nli-v20/internal/routing"
+	"nexora.local/nli-v20/internal/upes"
+	"nexora.local/nli-v20/telemetry"
 )
 
 // InputConfig describes one monitored log file.
@@ -1182,7 +1182,7 @@ func Run(ctx context.Context, c Config, once bool) (runErr error) {
 			}
 			legacyWindowsCheckpoint := runtime.GOOS == "windows" && t.hasCheckpoint && t.state.Device == 0 && dev != 0 && t.state.Offset <= info.Size()
 			if legacyWindowsCheckpoint {
-				// Releases before V19 derived the Windows identity from modification
+				// Releases before V20 derived the Windows identity from modification
 				// time. Preserve the acknowledged offset once while migrating that
 				// checkpoint to the stable volume/file-index identity.
 				t.state.Device = dev
@@ -1281,7 +1281,6 @@ func Run(ctx context.Context, c Config, once bool) (runErr error) {
 
 		if processed < batchSize {
 			phase := "eof_wait"
-			journal.event("eof_wait", t.input.Path, "")
 			latest, e := os.Stat(t.input.Path)
 			if (e == nil && !os.SameFile(info, latest)) || errors.Is(e, os.ErrNotExist) {
 				if result := t.ml.Flush(); result != nil {
@@ -1300,12 +1299,12 @@ func Run(ctx context.Context, c Config, once bool) (runErr error) {
 				phase = "reading"
 				journal.event("source_resume", t.input.Path, "appended bytes")
 			}
-			journal.progress(t.input.Path, journalCounts{read: t.stream.readLines.Load(), parsed: t.stream.normalized.Load(), quarantined: t.stream.quarantined.Load()})
+			journal.progress(t.input.Path, phase, journalCounts{read: t.stream.readLines.Load(), parsed: t.stream.normalized.Load(), quarantined: t.stream.quarantined.Load(), errors: t.stream.errors.Load(), bytes: t.stream.bytes.Load()})
 			journal.outputRecovered(t.input.Path)
 			depth, capacity := outputQueueStats()
 			streamSamples.put(t.stream.publish(t.input.Path, phase, depth, capacity, time.Now()))
 		} else {
-			journal.progress(t.input.Path, journalCounts{read: t.stream.readLines.Load(), parsed: t.stream.normalized.Load(), quarantined: t.stream.quarantined.Load()})
+			journal.progress(t.input.Path, "reading", journalCounts{read: t.stream.readLines.Load(), parsed: t.stream.normalized.Load(), quarantined: t.stream.quarantined.Load(), errors: t.stream.errors.Load(), bytes: t.stream.bytes.Load()})
 			journal.outputRecovered(t.input.Path)
 			depth, capacity := outputQueueStats()
 			streamSamples.put(t.stream.publish(t.input.Path, "reading", depth, capacity, time.Now()))

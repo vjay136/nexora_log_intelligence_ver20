@@ -29,7 +29,7 @@
   "checkpoint_passed": true,
   "target_met_on_this_host": true,
   "parser_pack_source_directory": "/src/configs/parsers",
-  "parser_pack_directory_used": "/tmp/nli-v19-throughput/parser-packs",
+  "parser_pack_directory_used": "/tmp/nli-v20-throughput/parser-packs",
   "durable_file_output": true,
   "scope": "generated JSONL across independent source files through the production agent read, ParserPack attempt/fallback parse, durable local JSONL output and durable checkpoints; includes output/quarantine JSON validation; metrics are host-specific"
 }

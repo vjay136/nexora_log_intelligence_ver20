@@ -24,6 +24,12 @@ read_bundle() {
 controller_url=''
 enrollment_token=''
 ca_base64=''
+ca_candidate=''
+ca_commit_required=false
+cleanup() {
+  [[ -z $ca_candidate ]] || rm -f -- "$ca_candidate"
+}
+trap cleanup EXIT
 if [[ -n $BOOTSTRAP_FILE ]]; then
   if [[ -f $BOOTSTRAP_FILE ]]; then
     controller_url=$(read_bundle NLI_CONTROLLER_URL)
@@ -38,7 +44,7 @@ if [[ -n $BOOTSTRAP_FILE ]]; then
     fail "bootstrap file not found: $BOOTSTRAP_FILE (pass a file path or enter a controller URL)"
   fi
 else
-  printf '\nNLI v19 managed-client setup\n'
+  printf '\nNLI v20 managed-client setup\n'
   read -r -p 'Controller URL (production requires HTTPS): ' controller_url
   read -r -s -p 'Controller enrollment token: ' enrollment_token
   printf '\n'
@@ -65,22 +71,46 @@ PY
 
 scheme=${controller_url%%:*}
 custom_ca=''
+existing_controller_url=$(python3 - "$CONFIG" <<'PY'
+import json, pathlib, sys
+try:
+    value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+    print(str(value.get("controller_url", "")).rstrip("/"))
+except (OSError, ValueError):
+    pass
+PY
+)
+existing_ca=$(python3 - "$CONFIG" <<'PY'
+import json, pathlib, sys
+try:
+    value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+    print(str(value.get("ca_file", "")).strip())
+except (OSError, ValueError):
+    pass
+PY
+)
 if [[ $scheme == https ]]; then
   if [[ -n $ca_base64 ]]; then
     umask 077
-    ca_tmp=$(mktemp "${CA_FILE}.XXXXXX")
-    printf '%s' "$ca_base64" | base64 -d >"$ca_tmp" || fail 'bootstrap CA is not valid base64'
-    openssl x509 -in "$ca_tmp" -noout >/dev/null 2>&1 || fail 'bootstrap CA is not a valid PEM certificate'
-    install -o root -g root -m 0644 "$ca_tmp" "$CA_FILE"
-    rm -f "$ca_tmp"
-    custom_ca=$CA_FILE
+    ca_candidate=$(mktemp "${CA_FILE}.candidate.XXXXXX")
+    printf '%s' "$ca_base64" | base64 -d >"$ca_candidate" || fail 'bootstrap CA is not valid base64'
+    openssl x509 -in "$ca_candidate" -noout >/dev/null 2>&1 || fail 'bootstrap CA is not a valid PEM certificate'
+    chmod 0644 "$ca_candidate"
+    custom_ca=$ca_candidate
+    ca_commit_required=true
   elif [[ -t 0 ]]; then
     read -r -p 'Private CA file (Enter to use the system trust store): ' supplied_ca
     if [[ -n $supplied_ca ]]; then
       [[ -f $supplied_ca ]] || fail "CA file not found: $supplied_ca"
-      install -o root -g root -m 0644 "$supplied_ca" "$CA_FILE"
-      custom_ca=$CA_FILE
+      openssl x509 -in "$supplied_ca" -noout >/dev/null 2>&1 || fail 'supplied CA is not a valid PEM certificate'
+      custom_ca=$supplied_ca
+      ca_commit_required=true
     fi
+  fi
+  if [[ -z $custom_ca && ${controller_url%/} == "$existing_controller_url" && -n $existing_ca && -f $existing_ca ]]; then
+    openssl x509 -in "$existing_ca" -noout >/dev/null 2>&1 || fail "configured controller CA is not a valid PEM certificate: $existing_ca"
+    custom_ca=$existing_ca
+    info "preserving verified controller CA from the current configuration: $existing_ca"
   fi
 else
   host=$(NLI_SETUP_URL=$controller_url python3 -c 'import os,urllib.parse; print(urllib.parse.urlparse(os.environ["NLI_SETUP_URL"]).hostname)')
@@ -102,27 +132,6 @@ environment=${environment:-production}
 region=${region:-local}
 team=${team:-operations}
 for value in "$environment" "$region" "$team"; do [[ $value =~ ^[A-Za-z0-9._:-]+$ ]] || fail 'tags may contain only letters, digits, . _ : -'; done
-
-NLI_SETUP_URL=$controller_url NLI_SETUP_CA=$custom_ca NLI_SETUP_ENV=$environment NLI_SETUP_REGION=$region NLI_SETUP_TEAM=$team \
-python3 - "$CONFIG" <<'PY'
-import json, os, pathlib, sys
-path = pathlib.Path(sys.argv[1])
-value = json.loads(path.read_text(encoding="utf-8"))
-value["controller_url"] = os.environ["NLI_SETUP_URL"].rstrip("/")
-value["ca_file"] = os.environ["NLI_SETUP_CA"]
-value["allow_insecure_http"] = value["controller_url"].startswith("http://")
-value["tags"] = {
-    "environment": os.environ["NLI_SETUP_ENV"],
-    "region": os.environ["NLI_SETUP_REGION"],
-    "team": os.environ["NLI_SETUP_TEAM"],
-}
-tmp = path.with_suffix(path.suffix + ".tmp")
-tmp.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-tmp.chmod(0o640)
-tmp.replace(path)
-PY
-chown root:nli "$CONFIG"
-chmod 0640 "$CONFIG"
 
 curl_args=(--fail --silent --show-error --connect-timeout 5 --max-time 15 --header 'Accept: application/json')
 [[ -n $custom_ca ]] && curl_args+=(--cacert "$custom_ca")
@@ -152,12 +161,52 @@ if ! health_json=$(curl "${curl_args[@]}" --verbose --dump-header "$health_heade
   fail 'controller health check failed; correct the specific DNS, route, firewall, certificate trust, or hostname issue above and rerun setup'
 fi
 rm -f "$curl_diagnostics"
-tr -d '\r' <"$health_headers" | grep -Eiq '^X-NLI-Controller:[[:space:]]*v19$' || {
+tr -d '\r' <"$health_headers" | grep -Eiq '^X-NLI-Controller:[[:space:]]*v20$' || {
   rm -f "$health_headers"
-  fail 'target did not identify itself as an NLI v19 controller'
+  fail 'target did not identify itself as an NLI v20 controller'
 }
 rm -f "$health_headers"
-printf '%s' "$health_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("service")=="nli-controller-agent" and d.get("api_version")=="v1"' || fail 'target is not an NLI v19 controller'
+printf '%s' "$health_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d.get("service")=="nli-controller-agent" and d.get("api_version")=="v1"' || fail 'target is not an NLI v20 controller'
+
+if [[ $ca_commit_required == true ]]; then
+  verified_ca=$(mktemp "${CA_FILE}.verified.XXXXXX")
+  install -o root -g root -m 0644 "$custom_ca" "$verified_ca"
+  mv -f -- "$verified_ca" "$CA_FILE"
+  custom_ca=$CA_FILE
+fi
+
+# Commit controller trust and endpoint settings only after the candidate
+# controller has passed certificate, identity, and service checks. A failed
+# setup attempt must never erase the last-known working CA or endpoint.
+NLI_SETUP_URL=$controller_url NLI_SETUP_CA=$custom_ca NLI_SETUP_ENV=$environment NLI_SETUP_REGION=$region NLI_SETUP_TEAM=$team \
+python3 - "$CONFIG" <<'PY'
+import json, os, pathlib, sys, tempfile
+path = pathlib.Path(sys.argv[1])
+value = json.loads(path.read_text(encoding="utf-8"))
+value["controller_url"] = os.environ["NLI_SETUP_URL"].rstrip("/")
+value["ca_file"] = os.environ["NLI_SETUP_CA"]
+value["allow_insecure_http"] = value["controller_url"].startswith("http://")
+value["tags"] = {
+    "environment": os.environ["NLI_SETUP_ENV"],
+    "region": os.environ["NLI_SETUP_REGION"],
+    "team": os.environ["NLI_SETUP_TEAM"],
+}
+fd, name = tempfile.mkstemp(prefix=path.name + ".verified.", dir=path.parent)
+candidate = pathlib.Path(name)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        json.dump(value, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    candidate.chmod(0o640)
+    candidate.replace(path)
+finally:
+    if candidate.exists():
+        candidate.unlink()
+PY
+chown root:nli "$CONFIG"
+chmod 0640 "$CONFIG"
 
 umask 077
 env_tmp=$(mktemp "${ENV_FILE}.XXXXXX")

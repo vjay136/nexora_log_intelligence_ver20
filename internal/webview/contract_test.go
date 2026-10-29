@@ -33,6 +33,7 @@ func TestRequiredTabsAndAPIBackings(t *testing.T) {
 		"/metadata", "/rollouts", "/artifacts", "/rbac/roles", "/audit", "/system",
 		"/assurance/ai-proposal", "/assurance/ai-proposals", "AI remediation review",
 		"Approve as second reviewer", "Create validated parser draft", "ai_proposal_changed",
+		"Read / processed total", "Parsed / quarantine total", "Cumulative counts use the same authoritative source snapshot",
 	} {
 		if !strings.Contains(app, marker) {
 			t.Errorf("missing WebView contract %q", marker)
@@ -91,7 +92,7 @@ func TestLoginFailsClosedUntilControllerIdentityIsVerified(t *testing.T) {
 		"method: 'OPTIONS'",
 		"health?.service !== 'nli-controller-agent'",
 		"health?.api_version !== 'v1'",
-		"loginResponse.headers.get('x-nli-controller') !== 'v19'",
+		"loginResponse.headers.get('x-nli-controller') !== 'v20'",
 		"if(!state.controllerReady){showPreviewOnly(CONTROLLER_REQUIRED);return;}",
 	} {
 		if !strings.Contains(app, marker) {

@@ -10,7 +10,7 @@ import (
 	"sort"
 	"testing"
 
-	parserpolicy "nexora.local/nli-v19/parser-policy"
+	parserpolicy "nexora.local/nli-v20/parser-policy"
 )
 
 type corpusFixture struct {

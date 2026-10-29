@@ -14,18 +14,18 @@ root = args.root.resolve()
 files = [
     "package.json", "package-lock.json", "vercel.json", "wrangler.jsonc", ".env.local.example",
     "web/index.html", "web/app.js", "web/styles.css", "web/nli-mark.svg",
-    "web/nexora-logo-v19.png", "web/login-banner-v19.png", "web/nexora-poster-v19.png",
+    "web/nexora-logo-v20.png", "web/login-banner-v20.png", "web/nexora-poster-v20.png",
     "web/_headers", "web/README.txt", "web/package.json", "web/package-lock.json", "web/vite.config.js",
     "web/Open-NLI-WebView.ps1", "api/v1/[...path].js",
     "functions/api/v1/[[path]].js", "web/e2e.spec.js", "tests/vercel-proxy.test.js",
     "tests/cloudflare-proxy.test.js", "tests/vercel-preflight.test.js",
     "scripts/deploy-vercel.ps1", "scripts/vercel-preflight.mjs",
-    "scripts/copy-v19-brand-assets.mjs",
+    "scripts/copy-v20-brand-assets.mjs",
 ]
 # Include the deployment build helper when present, but never generated output,
 # local environment files, dependency folders, or controller credentials.
 files += [p.relative_to(root).as_posix() for p in sorted((root / "scripts").glob("*web*.mjs"))]
-for optional in ("docs/WEBVIEW_SUPABASE_DEPLOYMENT.md", "docs/V19_DEPLOYMENT.md",
+for optional in ("docs/WEBVIEW_SUPABASE_DEPLOYMENT.md", "docs/V20_DEPLOYMENT.md",
                  "docs/VERCEL_DEPLOYMENT.md", "docs/CLOUDFLARE_PAGES_DEPLOYMENT.md",
                  "scripts/build-vercel.mjs"):
     if (root / optional).is_file():

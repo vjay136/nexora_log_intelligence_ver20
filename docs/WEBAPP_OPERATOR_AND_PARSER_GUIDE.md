@@ -1,6 +1,6 @@
-# NLI V19 WebApp Operator and Parser Guide
+# NLI V20 WebApp Operator and Parser Guide
 
-This guide describes controls present in the V19 web application and controller code. The WebApp is an authenticated control plane, not a browser-only parser. Navigation is built from `web/app.js`; the controller provides `/api/v1` operations and RBAC. Use the controller-served WebView or a supported Vercel/Cloudflare proxy configured to the controller. A static file preview cannot sign in or manage state.
+This guide describes controls present in the V20 web application and controller code. The WebApp is an authenticated control plane, not a browser-only parser. Navigation is built from `web/app.js`; the controller provides `/api/v1` operations and RBAC. Use the controller-served WebView or a supported Vercel/Cloudflare proxy configured to the controller. A static file preview cannot sign in or manage state.
 
 ## 1. Sign in and understand the connection
 
@@ -169,7 +169,7 @@ The notification bell shows in-session progress, completion, and error messages 
 6. In **Parser Fleet Sync**, verify desired/applied hashes and propose rollout to selected or all eligible clients. Complete the separate rollout approval, then verify client acknowledgements and hashes before replay. Replay only the exact record IDs on their originating client; the controller rejects excluded, resolved, in-flight, dead-letter, or otherwise ineligible records. Client outcomes remain pending until per-record parser confirmation arrives.
 7. Records remain queued when parsing or customer-output delivery fails. Replay uses bounded 1, 5, 15, then 60 minute backoff and stops after five total attempts; the fifth unresolved result becomes `dead_letter` for manual attention. A controller/WebApp telemetry outage does not undo a successful customer delivery; the result marks telemetry separately.
 
-The complete normal and recovery execution order, including UPES and GPRS plus the full meanings of NHLE, NURSF, NAPI, NAL, NUPIRE, and EGPE, is documented in [Ver19 subsystem names and execution order](V19_SUBSYSTEM_ORCHESTRATION.md). The key boundary is that NHLE processes ordinary records, while UPES observes bounded failure metadata and GPRS guides explicit evidence and review work; neither bypasses the existing signed rollout.
+The complete normal and recovery execution order, including UPES and GPRS plus the full meanings of NHLE, NURSF, NAPI, NAL, NUPIRE, and EGPE, is documented in [Ver20 subsystem names and execution order](V20_SUBSYSTEM_ORCHESTRATION.md). The key boundary is that NHLE processes ordinary records, while UPES observes bounded failure metadata and GPRS guides explicit evidence and review work; neither bypasses the existing signed rollout.
 
 ## 6. Users, roles and audit
 
@@ -187,7 +187,7 @@ The browser must never receive Supabase server secrets, Storage secret keys, nod
 
 ## 8. Controller and client RPM operations
 
-V19 packages target x86_64 Rocky Linux 9/10 as described by the repository support/release docs. The controller RPM (`nli-controller-agent`) provides the authenticated API, WebView, enrollment, fleet sync, rollout, telemetry and controller-side storage integration. The client RPM (`nli-client`) provides the parsing agent and restricted fleet-control sidecar. Install the controller on a management host and clients on log-producing hosts; install both on one host only if it also processes local logs.
+V20 packages target x86_64 Rocky Linux 9/10 as described by the repository support/release docs. The controller RPM (`nli-controller-agent`) provides the authenticated API, WebView, enrollment, fleet sync, rollout, telemetry and controller-side storage integration. The client RPM (`nli-client`) provides the parsing agent and restricted fleet-control sidecar. Install the controller on a management host and clients on log-producing hosts; install both on one host only if it also processes local logs.
 
 - Controller health/API and WebView default to port `12382` in private TLS mode. Public Nginx/ACME, Cloudflare Tunnel, and operator-managed proxy modes keep `12382` on loopback and publish only HTTPS. The parser-agent metrics endpoint is `127.0.0.1:12380/metrics`; it is local metrics, not the browser API.
 - Run controller setup with `sudo nli-controller-setup`; it configures the admin, TLS/listen mode, and backend settings and creates a one-use client bootstrap file under `/root`. Transfer it securely, then on a client run `sudo nli-client-setup /path/to/nli-client-bootstrap.env`. For another client, rotate enrollment on the controller with `sudo nli-controller-setup --rotate-enrollment` and use the new one-use file.

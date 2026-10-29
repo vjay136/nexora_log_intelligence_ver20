@@ -11,8 +11,8 @@ import sys
 
 root = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else pathlib.Path(__file__).parents[2])
 setup = (root / "scripts/setup-controller-rocky.sh").read_text(encoding="utf-8")
-uninstall = (root / "scripts/uninstall-controller-ver19.sh").read_text(encoding="utf-8")
-installer = (root / "scripts/install-controller-ver19.sh").read_text(encoding="utf-8")
+uninstall = (root / "scripts/uninstall-controller-ver20.sh").read_text(encoding="utf-8")
+installer = (root / "scripts/install-controller-ver20.sh").read_text(encoding="utf-8")
 docs = (root / "docs/INSTALLATION_AND_CONFIGURATION.md").read_text(encoding="utf-8")
 spec = (root / "packaging/rpm/nli-controller-agent.spec").read_text(encoding="utf-8")
 
@@ -180,7 +180,7 @@ with tempfile.TemporaryDirectory() as directory:
         "configured_at": "2026-10-14T00:00:00+00:00",
     }, "the edge manifest writer must replace old content with the expected secret-free schema")
 require("--quickstart" in installer and "--mode" in installer and "NLI_SETUP_MODE=$deployment_mode" in installer,
-        "V19 installer must expose explicit deployment-mode selection")
+        "V20 installer must expose explicit deployment-mode selection")
 require("Nginx and Apache only configure this host" in docs,
         "installation docs must state that reverse proxies cannot create public IP or DNS")
 require("Mode 10" in docs and "Mode 9" in docs and "NLI_CONTROLLER_ORIGIN" in docs,

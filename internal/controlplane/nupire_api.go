@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"nexora.local/nli-v19/internal/middleware"
-	"nexora.local/nli-v19/internal/nupire"
+	"nexora.local/nli-v20/internal/middleware"
+	"nexora.local/nli-v20/internal/nupire"
 )
 
 // nupireController is the boundary between HTTP/RBAC and the NUPIRE domain.
