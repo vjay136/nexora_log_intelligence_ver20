@@ -26,7 +26,12 @@ func runtimeParserPackForDocument(doc metastore.Document) (*parserpolicy.ParserP
 		if err != nil {
 			return nil, nil, fmt.Errorf("published runtime pack is invalid: %w", err)
 		}
-		return normalizeRuntimeParserPack(doc, pack)
+		if pack.ID != doc.ID && !legacyRuntimeIdentityMatches(envelope, doc.ID, pack.ID) {
+			return nil, nil, fmt.Errorf("runtime parser id %q does not match catalog id %q; legacy records must declare matching catalog_id and runtime_id", pack.ID, doc.ID)
+		}
+		packDoc := doc
+		packDoc.ID = pack.ID
+		return normalizeRuntimeParserPack(packDoc, pack)
 	}
 
 	// Imported NLI packs are stored directly as the document payload. Decode
@@ -47,11 +52,24 @@ func runtimeParserPackForDocument(doc metastore.Document) (*parserpolicy.ParserP
 	if err := strictJSON(rawRules, &rules); err != nil {
 		return nil, nil, fmt.Errorf("legacy parser rules are incompatible with the current runtime: %w", err)
 	}
-	var id, version string
+	var id, runtimeID, catalogID, version string
 	_ = json.Unmarshal(envelope["id"], &id)
+	_ = json.Unmarshal(envelope["runtime_id"], &runtimeID)
+	_ = json.Unmarshal(envelope["catalog_id"], &catalogID)
 	_ = json.Unmarshal(envelope["version"], &version)
+	if catalogID != "" && catalogID != doc.ID {
+		return nil, nil, fmt.Errorf("legacy catalog_id %q does not match document id %q", catalogID, doc.ID)
+	}
 	if id == "" {
 		id = doc.ID
+	}
+	if runtimeID != "" {
+		if catalogID != doc.ID {
+			return nil, nil, fmt.Errorf("legacy runtime_id requires catalog_id %q", doc.ID)
+		}
+		id = runtimeID
+	} else if id != doc.ID {
+		return nil, nil, fmt.Errorf("legacy parser id %q does not match catalog id %q; declare runtime_id and catalog_id for compatibility", id, doc.ID)
 	}
 	priority := 0
 	_ = json.Unmarshal(envelope["priority"], &priority)
@@ -67,7 +85,19 @@ func runtimeParserPackForDocument(doc metastore.Document) (*parserpolicy.ParserP
 		ResourceLimits: parserpolicy.DefaultResourceLimits(),
 		Metadata:       map[string]string{"compatibility_source": "legacy-parser-catalog"},
 	}
-	return normalizeRuntimeParserPack(doc, pack)
+	packDoc := doc
+	packDoc.ID = id
+	return normalizeRuntimeParserPack(packDoc, pack)
+}
+
+// Legacy catalog records may use a human-facing catalog ID and a distinct
+// runtime parser ID. Accept the alias only when both identities are explicit;
+// current Assurance records and direct ParserPacks still require exact IDs.
+func legacyRuntimeIdentityMatches(envelope map[string]json.RawMessage, catalogID, runtimeID string) bool {
+	var declaredCatalogID, declaredRuntimeID string
+	_ = json.Unmarshal(envelope["catalog_id"], &declaredCatalogID)
+	_ = json.Unmarshal(envelope["runtime_id"], &declaredRuntimeID)
+	return declaredCatalogID == catalogID && declaredRuntimeID == runtimeID && runtimeID != ""
 }
 
 func normalizeRuntimeParserPack(doc metastore.Document, pack *parserpolicy.ParserPack) (*parserpolicy.ParserPack, json.RawMessage, error) {
@@ -139,22 +169,34 @@ func strictJSON(data []byte, target any) error {
 func parserDocumentView(doc metastore.Document) map[string]any {
 	view := documentView(doc)
 	status := "not_published"
+	switch doc.State {
+	case "draft", "in_review", "rejected":
+		status = doc.State
+	}
 	if doc.State == "approved" {
 		status = "ready_to_publish"
 	}
+	view["status"] = status
 	if doc.State == "active" || doc.State == "published" || doc.State == "approved" {
 		if pack, _, err := runtimeParserPackForDocument(doc); err != nil {
 			status = "blocked"
-			view["runtime_sync"] = map[string]any{"status": status, "reason": err.Error()}
+			view["catalog_state"] = doc.State
+			view["state"] = status
+			view["status"] = status
+			view["runtime_sync"] = map[string]any{"status": status, "reason": err.Error(), "catalog_id": doc.ID}
 			return view
 		} else {
-			view["runtime_sync"] = map[string]any{"status": status, "parser_id": pack.ID, "parser_version": pack.Version}
+			view["runtime_sync"] = map[string]any{"status": status, "catalog_id": doc.ID, "parser_id": pack.ID, "parser_version": pack.Version}
 			if doc.State == "active" || doc.State == "published" {
-				view["runtime_sync"].(map[string]any)["status"] = "published"
+				status = "published"
+				view["state"] = status
+				view["status"] = status
+				view["runtime_sync"].(map[string]any)["status"] = status
 			}
 			return view
 		}
 	}
-	view["runtime_sync"] = map[string]any{"status": status}
+	view["status"] = status
+	view["runtime_sync"] = map[string]any{"status": status, "catalog_id": doc.ID}
 	return view
 }

@@ -2,6 +2,7 @@ package controlplane
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -26,6 +27,31 @@ func countActionableDocuments(ctx context.Context, store metastore.Store, collec
 		}
 		result.Total++
 		result.States[document.State]++
+	}
+	return result, nil
+}
+
+// Quarantine records carry their domain status in the payload as well as the
+// document state. Prefer the payload status so a stale index/document state
+// cannot keep an excluded or resolved record in a pending sidebar badge.
+func countActionableQuarantineRecords(ctx context.Context, store metastore.Store) (navigationActionCount, error) {
+	result := navigationActionCount{States: map[string]int{}, Available: true}
+	documents, err := store.List(ctx, quarantineRecordsCollection, metastore.Query{Limit: 1000})
+	if err != nil {
+		return result, err
+	}
+	actionable := map[string]struct{}{"waiting": {}, "replay_failed": {}}
+	for _, document := range documents {
+		state := document.State
+		var record quarantineRecord
+		if json.Unmarshal(document.Payload, &record) == nil && record.Status != "" {
+			state = record.Status
+		}
+		if _, ok := actionable[state]; !ok {
+			continue
+		}
+		result.Total++
+		result.States[state]++
 	}
 	return result, nil
 }
@@ -90,7 +116,7 @@ func (s *Server) handleNavigationCounts(w http.ResponseWriter, r *http.Request) 
 	quarantineCount := navigationActionCount{States: map[string]int{}, Available: false}
 	if s.quarantine == nil || s.quarantine.store == nil {
 		unavailable[quarantineRecordsCollection] = "quarantine store is not configured"
-	} else if count, countErr := countActionableDocuments(ctx, s.quarantine.store, quarantineRecordsCollection, map[string]struct{}{"waiting": {}, "replay_failed": {}}); countErr != nil {
+	} else if count, countErr := countActionableQuarantineRecords(ctx, s.quarantine.store); countErr != nil {
 		unavailable[quarantineRecordsCollection] = "quarantine store temporarily unavailable"
 	} else {
 		quarantineCount = count

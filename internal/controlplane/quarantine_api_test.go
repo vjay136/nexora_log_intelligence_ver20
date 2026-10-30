@@ -144,6 +144,23 @@ func TestQuarantineDispositionAndRawPurgeAreAuditedAndReplaySafe(t *testing.T) {
 	if err != nil || got.Status != "excluded" || got.ExcludeReason != "confirmed duplicate source" || !got.RawAvailable {
 		t.Fatalf("exclude should preserve metadata and evidence: record=%+v err=%v", got, err)
 	}
+	response, data = f.request(http.MethodGet, "/api/v1/navigation/counts", nil)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("navigation count after exclusion: %d %s", response.StatusCode, data)
+	}
+	for _, page := range []string{"quarantine-wizard", "unknowns", "upes"} {
+		if count := navigationPageCount(t, data, page); count != 0 {
+			t.Errorf("%s badge count after exclusion = %v, want 0", page, count)
+		}
+	}
+	response, data = f.request(http.MethodGet, "/api/v1/quarantine/summary", nil)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("summary after exclusion: %d %s", response.StatusCode, data)
+	}
+	var excludedSummary map[string]int
+	if err := json.Unmarshal(data, &excludedSummary); err != nil || excludedSummary["actionable"] != 0 || excludedSummary["total"] != 1 {
+		t.Fatalf("excluded evidence should remain while actionable count clears: summary=%s err=%v", data, err)
+	}
 	response, data = f.request(http.MethodPost, "/api/v1/quarantine/reprocess", map[string]any{"record_ids": []string{"q-disposition"}, "node_id": "node-1"})
 	if response.StatusCode != http.StatusConflict {
 		t.Fatalf("excluded record replay status=%d: %s", response.StatusCode, data)
@@ -152,13 +169,34 @@ func TestQuarantineDispositionAndRawPurgeAreAuditedAndReplaySafe(t *testing.T) {
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("include %d: %s", response.StatusCode, data)
 	}
+	response, data = f.request(http.MethodGet, "/api/v1/navigation/counts", nil)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("navigation count after include: %d %s", response.StatusCode, data)
+	}
+	for _, page := range []string{"quarantine-wizard", "unknowns", "upes"} {
+		if count := navigationPageCount(t, data, page); count != 1 {
+			t.Errorf("%s badge count after include = %v, want 1", page, count)
+		}
+	}
+	response, data = f.request(http.MethodGet, "/api/v1/quarantine/summary", nil)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("summary after include: %d %s", response.StatusCode, data)
+	}
+	var includedSummary map[string]int
+	if err := json.Unmarshal(data, &includedSummary); err != nil || includedSummary["actionable"] != 1 {
+		t.Fatalf("included record should be actionable: summary=%s err=%v", data, err)
+	}
 	response, data = f.request(http.MethodDelete, "/api/v1/quarantine/records/q-disposition/raw", map[string]any{})
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("delete raw %d: %s", response.StatusCode, data)
 	}
 	got, _, err = f.server.getQuarantineRecord(context.Background(), "q-disposition")
-	if err != nil || got.RawAvailable {
+	if err != nil || got.RawAvailable || got.Status != "evidence_deleted" {
 		t.Fatalf("raw evidence should be deleted while metadata remains: record=%+v err=%v", got, err)
+	}
+	response, data = f.request(http.MethodGet, "/api/v1/navigation/counts", nil)
+	if response.StatusCode != http.StatusOK || navigationPageCount(t, data, "quarantine-wizard") != 0 {
+		t.Fatalf("deleting retained raw should retain metadata but clear actionable work: %d %s", response.StatusCode, data)
 	}
 	if _, err := f.server.quarantine.store.Get(context.Background(), quarantineRawCollection, "q-disposition", 0); !os.IsNotExist(err) {
 		t.Fatalf("raw evidence remains after delete: %v", err)

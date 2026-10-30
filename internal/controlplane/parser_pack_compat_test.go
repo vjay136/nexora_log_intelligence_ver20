@@ -81,6 +81,56 @@ func TestLegacyParserPublicationCreatesApprovalGatedFleetBundle(t *testing.T) {
 	}
 }
 
+func TestLegacyRuntimeAndCatalogIDsReconcileOnlyWhenExplicit(t *testing.T) {
+	fixture := newAPIFixture(t)
+	pack, err := assuranceRuntimePack("runtime-mail", "1.0.0", "legacy-author", map[string]any{
+		"pattern_type": "regex", "pattern": `^(?P<level>[A-Z]+) (?P<message>.+)$`,
+		"fields": []any{
+			map[string]any{"name": "level", "source": "group:level", "type": "string", "required": true},
+			map[string]any{"name": "message", "source": "group:message", "type": "string", "required": true},
+		},
+	}, []assuranceRequest{{Raw: "INFO ready", Service: "auto"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	encodedPack, err := json.Marshal(pack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload, _ := json.Marshal(map[string]any{"id": "mail-catalog-entry", "catalog_id": "mail-catalog-entry", "runtime_id": "runtime-mail", "name": "Mail", "runtime_pack": json.RawMessage(encodedPack)})
+	doc, err := fixture.server.metadata.Put(context.Background(), metastore.Document{Collection: "parser-packs", ID: "mail-catalog-entry", State: "published", Payload: payload, CreatedBy: "legacy-author"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	converted, _, err := runtimeParserPackForDocument(doc)
+	if err != nil || converted.ID != "runtime-mail" {
+		t.Fatalf("explicit legacy identity pair was not reconciled: parser=%#v err=%v", converted, err)
+	}
+	bundle, err := fixture.server.buildActiveParserBundle(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	foundRuntimeID := false
+	for _, asset := range bundle.Assets {
+		if asset.AssetClass == "parser-packs" && asset.AssetID == "runtime-mail" {
+			foundRuntimeID = true
+		}
+	}
+	if !foundRuntimeID {
+		t.Fatalf("fleet bundle did not use runtime parser identity: %#v", bundle.Assets)
+	}
+	view := parserDocumentView(doc)
+	if view["state"] != "published" || view["catalog_state"] != nil {
+		t.Fatalf("valid legacy pack was not presented as published: %#v", view)
+	}
+
+	payload, _ = json.Marshal(map[string]any{"id": "mail-catalog-entry", "runtime_id": "runtime-mail", "name": "Mail", "runtime_pack": json.RawMessage(encodedPack)})
+	doc.Payload = payload
+	if _, _, err := runtimeParserPackForDocument(doc); err == nil {
+		t.Fatal("runtime/catalog alias was accepted without explicit catalog_id")
+	}
+}
+
 func TestMalformedLegacyParserIsIsolatedFromControllerAndFleetBundle(t *testing.T) {
 	fixture := newAPIFixture(t)
 	if _, err := fixture.server.metadata.Put(context.Background(), metastore.Document{
@@ -104,7 +154,7 @@ func TestMalformedLegacyParserIsIsolatedFromControllerAndFleetBundle(t *testing.
 		if response.StatusCode != http.StatusOK {
 			t.Fatalf("controller route %s failed after malformed legacy parser: %d %s", path, response.StatusCode, body)
 		}
-		if path == "/api/v1/parser-packs" && (!bytes.Contains(body, []byte(`"status":"blocked"`)) || !bytes.Contains(body, []byte("legacy parser rules are incompatible"))) {
+		if path == "/api/v1/parser-packs" && (!bytes.Contains(body, []byte(`"status":"blocked"`)) || !bytes.Contains(body, []byte(`"state":"blocked"`)) || !bytes.Contains(body, []byte(`"catalog_state":"published"`)) || !bytes.Contains(body, []byte("legacy parser rules are incompatible"))) {
 			t.Fatalf("catalog did not expose isolated parser diagnostic: %s", body)
 		}
 	}

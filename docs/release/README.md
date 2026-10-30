@@ -1,5 +1,18 @@
 # NLI v20 release infrastructure
 
+## Release 20.0.0-3
+
+Release 3 corrects active-work counting and the guided quarantine recovery path. Excluded records and records whose retained raw evidence was deleted remain auditable but no longer inflate actionable navigation badges. Step 2 accepts operator-defined output field names, creates editable evidence-backed mappings, and updates the nine status cards from the current lifecycle state.
+
+Legacy parser compatibility is explicit: valid aliases are reconciled to current runtime identifiers, while incompatible records remain blocked and can be moved to a repair draft. Deterministic validation returns exact case totals, indexes, and reasons. Independent approval is unchanged; a parser author cannot approve their own revision.
+
+### Operator acceptance for release 3
+
+1. Exclude a waiting retained record and delete raw evidence from another. Confirm the records remain in audit/history views but the Quarantine Wizard, UPES, and Unknown & Quarantine badges clear.
+2. In Step 2, inspect raw evidence, enter comma/newline field names, create mappings, and confirm Steps 1–4 update to their actual status.
+3. Generate and preview the candidate. Confirm the desired JSON contains evidence-derived values, validation reports a non-zero case count, and Step 7 stays blocked until the deterministic preview passes.
+4. Confirm compatible legacy parsers expose a current runtime identity, incompatible parsers show a reason and **Repair as draft**, and the author’s approval control reads **Awaiting reviewer**.
+
 ## Release 20.0.0-2
 
 Release 2 keeps the controller and live synchronization path available while

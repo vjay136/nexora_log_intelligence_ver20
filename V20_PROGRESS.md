@@ -1,21 +1,23 @@
 # NLI Ver20 progress and acceptance state
 
-Updated: 2026-10-29
+Updated: 2026-10-30
 
-## Release 20.0.0-2 candidate
+## Release 20.0.0-3 candidate
 
-Release 2 reconciles valid parser records created by earlier releases, isolates
+Release 3 reconciles valid parser records created by earlier releases, isolates
 malformed records without taking the controller APIs offline, and automatically
 restores the previous catalog and materialized bundle if an approval proposal
 cannot be persisted. The quarantine workflow now gives one state-derived path
 through independent review, exact-bundle rollout, origin acknowledgement,
-targeted replay, verification, rollback, and offboarding.
+targeted replay, verification, rollback, and offboarding. Terminal retained
+records no longer inflate actionable badges, and Step 2 maps operator-provided
+field names to observed evidence before deterministic preview.
 
 ## Verified in the integrated source tree
 
 - Full Go suite: PASS.
 - Go vet: PASS.
-- Browser UI suite: PASS, 64/64 Chromium scenarios across every primary workspace and visible subtab.
+- Browser UI suite: PASS, 66/66 Chromium scenarios across every primary workspace and visible subtab.
 - Hosted WebApp contracts: PASS, 24/24; standalone and Vite production builds pass.
 - Linux race detector: PASS across all Go packages.
 - Hosted WebApp contracts: PASS, 24/24 Node scenarios.
@@ -46,4 +48,4 @@ upgrade/rollback, and multi-node TLS gates. Deployment-specific throughput and
 destination acceptance remain operator evidence and are not inferred from UI
 or unit tests.
 
-Status: **Release 2 source candidate verified; publication evidence pending tag CI**.
+Status: **Release 3 source candidate under verification; publication evidence pending local release build and tag CI**.

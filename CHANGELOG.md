@@ -1,5 +1,13 @@
 # Changelog
 
+## [20.0.0-3] - 2026-10-30
+
+- Clear Quarantine Wizard, UPES, and Unknown & Quarantine pending badges after exclude, raw-evidence deletion, replay resolution, or other terminal controller states while retaining audit metadata.
+- Let operators name desired fields in Step 2 and propagate those evidence-backed mappings through generation and deterministic preview.
+- Derive every wizard step card from current controller/browser lifecycle state and prevent stale empty desired JSON from entering candidate validation.
+- Reconcile valid legacy catalog/runtime identifiers, isolate incompatible parser records with a repair transition, and report deterministic validation reasons and case indexes.
+- Preserve independent parser approval: the author sees an explicit waiting-for-review state instead of a self-approval action.
+
 ## [20.0.0-2] - 2026-10-29
 
 - Keep parser catalog and live synchronization APIs available while safely reconciling malformed or legacy parser records.

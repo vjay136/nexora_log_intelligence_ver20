@@ -108,6 +108,8 @@ async function mockController(page, { role = 'admin', healthIdentity = 'v20', up
     if (path === '/api/v1/quarantine/summary') return fulfill({ waiting: 1, reprocessing: 0, resolved: 2, raw_available: 1 });
     if (path === '/api/v1/quarantine/records') return fulfill({ records: currentQRWRecords || [{ id: 'q-1', node_id: 'node-1', service: 'smtp', first_seen: '2026-10-10T00:00:00Z', attempt_count: 2, status: 'waiting', error_codes: ['no_match'], raw_available: true }] });
     if (path === '/api/v1/quarantine/history') return fulfill({ events: currentQRWHistory });
+    if (path.match(/^\/api\/v1\/quarantine\/records\/[^/]+\/exclude$/) && request.method() === 'POST') { const id=decodeURIComponent(path.split('/').at(-2)),record=(currentQRWRecords||[]).find(item=>item.id===id);if(record)record.status='excluded';return fulfill({ status:'excluded', record_id:id }); }
+    if (path.match(/^\/api\/v1\/quarantine\/records\/[^/]+\/raw$/) && request.method() === 'DELETE') { const id=decodeURIComponent(path.split('/').at(-2)),record=(currentQRWRecords||[]).find(item=>item.id===id);if(record){record.status='evidence_deleted';record.raw_available=false;}return fulfill({ status:'evidence_deleted', record_id:id }); }
     if (path === '/api/v1/quarantine/reprocess' && request.method() === 'POST') { const body=request.postDataJSON();qrwReplays.push(body);for(const record of currentQRWRecords||[])if(body.record_ids.includes(record.id))record.status='resolved';currentQRWHistory.push({record_id:'q-1',status:'resolved',outcome:'success'});return fulfill({ rollout_id: 'replay-1', status: 'pending' }, 202); }
     if (path.startsWith('/api/v1/metrics/timeseries')) { const params=new URL(request.url()).searchParams;historyQueries.push(params);const key=params.toString(),call=historyCounts[key]=(historyCounts[key]||0)+1,read=key.includes('range=24h')&&call>1?'42':'9007199254740993',parsed=read==='42'?'40':'9007199254740990'; return fulfill({ from: '2026-10-25T00:00:00Z', to: '2026-10-25T01:00:00Z', canonical_history: { bucket_width_seconds: 60, points: [{timestamp:'2026-10-25T00:59:00Z',read_delta:read,parsed_delta:parsed,quarantine_delta:'2',errors:1}] }, points: [{ timestamp: '2026-10-25T00:59:00Z', received: read, parsed, quarantine: 2, errors: 1, logs_received: read, logs_parsed: parsed, logs_quarantined: 2 }] }); }
     if (path === '/api/v1/verification/sample-corpus') return fulfill({ verdict: 'pass', known_key_inventory: { declared_family_keys: 278, covered_family_keys: 278, unmapped_family_keys: 0 }, totals: { records: 728, accounted_records: 728, parsed_records: 723, exact_parity_records: 723, failing_records: 0, expected_quarantined_records: 5, unexpected_quarantined_records: 0, parsed_comparable_raw_fields: 13101, parsed_generated_json_fields: 13101 }, families: [{ family: 'IMAP', records: 52, passing_records: 52, comparable_raw_fields: 1154, generated_json_fields: 1154, duplicate_occurrences: 0 }], records: [{ corpus: 'samples.log', source_line: 50, family: 'SMTP-OUT', expected_disposition: 'quarantined', disposition_reason: 'truncated record', record_sha256: 'a'.repeat(64) }] });
@@ -433,7 +435,7 @@ test('Quarantine Resolution Wizard maps the required unstructured fixture withou
   await expect(page.locator('.quarantine-wizard [data-wizard-step]')).toHaveCount(9);
   await page.getByRole('button',{name:'Inspect',exact:true}).click();
   await expect(page.locator('#gprs-preview-form [name=raw_evidence]')).toHaveValue(raw);
-  await page.getByRole('button',{name:/Define desired schema/}).click();
+  await page.getByRole('button',{name:/Review desired schema/}).click();
   await page.getByRole('button',{name:'Suggest from raw log'}).click();
   await expect(page.locator('[data-qrw-key=name]')).toHaveCount(9);
   await expect(page.locator('[data-qrw-key=name]').nth(0)).toHaveValue('date');
@@ -478,6 +480,37 @@ test('Quarantine Resolution Wizard maps the required unstructured fixture withou
   await expect.poll(()=>mock.observed.includes('POST /api/v1/assurance/parsers')).toBe(true);
 });
 
+test('QRW accepts operator field names in Inspect and updates live completion state', async ({ page }) => {
+  await mockController(page,{quarantineRaw:'2026-10-30 mail01 ERROR delivery_failed'});
+  await login(page);
+  await page.getByTestId('nav-quarantine-wizard').click();
+  await page.getByRole('button',{name:'Inspect',exact:true}).click();
+  await expect(page.locator('[data-wizard-step="1"] .qrw-step-state')).toHaveText('Complete');
+  await expect(page.locator('[data-wizard-step="2"] .qrw-step-state')).toHaveText('Complete');
+  await page.locator('[name=manual_field_names]').fill('event_date, host, severity, message');
+  await page.getByRole('button',{name:/Create mappings from my field names/}).click();
+  await expect(page.locator('[data-qrw-key=name]')).toHaveCount(4);
+  await expect(page.locator('[data-qrw-key=name]').nth(0)).toHaveValue('event_date');
+  await expect(page.locator('[data-qrw-key=name]').nth(3)).toHaveValue('message');
+  await expect(page.locator('[data-wizard-step="3"] .qrw-step-state')).toHaveText('Complete');
+  await expect(page.locator('[data-wizard-step="4"] .qrw-step-state')).toHaveText('Complete');
+  const desired=JSON.parse(await page.locator('#gprs-preview-form [name=gprs_desired]').inputValue());
+  expect(desired).toEqual({event_date:'2026-10-30',host:'mail01',severity:'ERROR',message:'delivery_failed'});
+});
+
+test('terminal quarantine actions clear actionable navigation badges while retaining records', async ({ page }) => {
+  await mockController(page,{qrwRecords:[{id:'q-1',node_id:'node-1',service:'smtp',first_seen:'2026-10-30T00:00:00Z',attempt_count:1,status:'waiting',error_codes:['no_match'],raw_available:true}]});
+  await login(page);
+  await expect(page.locator('[data-nav-count="quarantine-wizard"]')).toHaveText('1');
+  await page.getByTestId('nav-quarantine-wizard').click();
+  page.once('dialog',dialog=>dialog.accept('not applicable to this source'));
+  await page.getByRole('button',{name:'Ignore / exclude',exact:true}).click();
+  await expect(page.locator('[data-nav-count="quarantine-wizard"]')).toBeHidden();
+  await expect(page.locator('[data-nav-count="upes"]')).toBeHidden();
+  await page.getByTestId('nav-quarantine-wizard').click();
+  await expect(page.locator('#page')).toContainText(/excluded/i);
+});
+
 test('QRW stages 6–9 give the next action and gate replay on the exact origin bundle before verify and rollback', async ({ page }) => {
   const checksum='d'.repeat(64),wrong='e'.repeat(64);
   const mock=await mockController(page,{quarantineRaw:'alpha beta',
@@ -490,7 +523,7 @@ test('QRW stages 6–9 give the next action and gate replay on the exact origin 
   const lifecycle=page.locator('#page tr').filter({hasText:'reviewed-smtp'});
   await expect(page.locator('.qrw-next-action')).toContainText('Select and inspect one retained failure');
   await page.getByRole('button',{name:'Inspect',exact:true}).click();
-  await page.getByRole('button',{name:/Define desired schema/}).click();
+  await page.getByRole('button',{name:/Review desired schema/}).click();
   await page.getByRole('button',{name:'Suggest from raw log'}).click();
   await page.getByRole('button',{name:'Test all fields'}).click();
   await page.locator('[data-wizard-step="6"] button').click();

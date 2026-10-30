@@ -58,6 +58,13 @@ func TestNavigationCountsContainOnlyCurrentOperatorActions(t *testing.T) {
 	putNavigationCountDocument(t, f.server.metadata, "assurance-runs", "run-complete", "passed")
 	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-action", "waiting")
 	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-complete", "resolved")
+	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-replay-failed", "replay_failed")
+	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-excluded", "excluded")
+	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-dead-letter", "dead_letter")
+	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-manual", "manual_attention")
+	if _, err := f.server.quarantine.store.Put(context.Background(), metastore.Document{Collection: quarantineRecordsCollection, ID: "quarantine-stale-state", State: "waiting", Payload: []byte(`{"status":"excluded"}`), CreatedBy: "test"}); err != nil {
+		t.Fatal(err)
+	}
 
 	response, body := f.request(http.MethodGet, "/api/v1/navigation/counts", nil)
 	if response.StatusCode != http.StatusOK {
@@ -65,7 +72,7 @@ func TestNavigationCountsContainOnlyCurrentOperatorActions(t *testing.T) {
 	}
 	for page, want := range map[string]float64{
 		"parsers": 1, "parser-workspace": 1, "input-paths": 1, "rollouts": 1,
-		"assurance": 1, "quarantine-wizard": 1, "unknowns": 1, "upes": 1,
+		"assurance": 1, "quarantine-wizard": 2, "unknowns": 2, "upes": 2,
 	} {
 		if got := navigationPageCount(t, body, page); got != want {
 			t.Errorf("%s count = %v, want %v; body=%s", page, got, want, body)
@@ -77,6 +84,7 @@ func TestNavigationCountsContainOnlyCurrentOperatorActions(t *testing.T) {
 	putNavigationCountDocument(t, f.server.metadata, "rollout-proposals", "rollout-action", "approved")
 	putNavigationCountDocument(t, f.server.metadata, "assurance-runs", "run-action", "passed")
 	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-action", "resolved")
+	putNavigationCountDocument(t, f.server.quarantine.store, quarantineRecordsCollection, "quarantine-replay-failed", "excluded")
 
 	response, body = f.request(http.MethodGet, "/api/v1/navigation/counts", nil)
 	if response.StatusCode != http.StatusOK {

@@ -84,7 +84,10 @@ func (s *Server) buildActiveParserBundle(ctx context.Context) (parserAssetBundle
 				if name == "" {
 					name = pack.ID
 				}
-				bundle.Assets = append(bundle.Assets, parserBundleAsset{AssetClass: collection, AssetID: doc.ID, Name: name, Revision: doc.Revision, SHA256: hex.EncodeToString(digest[:]), Payload: encoded})
+				// Runtime synchronization keys parser packs by ParserPack.ID. A legacy
+				// catalog record can have a separate catalog ID, so the bundle must use
+				// the reconciled runtime identity while the controller retains doc.ID.
+				bundle.Assets = append(bundle.Assets, parserBundleAsset{AssetClass: collection, AssetID: pack.ID, Name: name, Revision: doc.Revision, SHA256: hex.EncodeToString(digest[:]), Payload: encoded})
 				continue
 			}
 			name, _ := payload["name"].(string)

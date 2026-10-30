@@ -531,10 +531,10 @@ func validateParserCandidate(definition map[string]any, cases []assuranceRequest
 	encoded, _ := json.Marshal(definition)
 	var parser registry.ParserDef
 	if err := json.Unmarshal(encoded, &parser); err != nil {
-		return map[string]any{"total": len(cases), "passed": 0, "failed": len(cases), "score": 0, "errors": []string{"parser definition is invalid"}}
+		return map[string]any{"status": "invalid_definition", "reason": "parser definition is invalid", "total": len(cases), "passed": 0, "failed": len(cases), "score": 0, "errors": []string{"parser definition is invalid"}}
 	}
 	if err := registry.Validate(&parser); err != nil {
-		return map[string]any{"total": len(cases), "passed": 0, "failed": len(cases), "score": 0, "errors": []string{err.Error()}}
+		return map[string]any{"status": "invalid_definition", "reason": err.Error(), "total": len(cases), "passed": 0, "failed": len(cases), "score": 0, "errors": []string{err.Error()}}
 	}
 	if len(cases) == 0 && len(parser.Tests) > 0 {
 		for _, test := range parser.Tests {
@@ -543,21 +543,35 @@ func validateParserCandidate(definition map[string]any, cases []assuranceRequest
 	}
 	passed := 0
 	outcomes := make([]map[string]any, 0, len(cases))
-	for _, item := range cases {
+	for index, item := range cases {
+		if strings.TrimSpace(item.Raw) == "" {
+			outcomes = append(outcomes, map[string]any{"index": index, "passed": false, "actual": map[string]any{}, "diff": []map[string]any{}, "errors": []string{"validation input is empty"}})
+			continue
+		}
 		actual, errors := registry.Apply(&parser, item.Raw)
 		diff, _ := structuralDiff(actual, item.Desired)
 		ok := len(errors) == 0 && len(diff) == 0 && len(item.Desired) > 0
 		if ok {
 			passed++
 		}
-		outcomes = append(outcomes, map[string]any{"passed": ok, "actual": actual, "diff": diff, "errors": errors, "raw_sha256": fmt.Sprintf("%x", hashBytes([]byte(item.Raw)))})
+		caseErrors := append([]string(nil), errors...)
+		if len(item.Desired) == 0 {
+			caseErrors = append(caseErrors, "expected output is empty")
+		}
+		outcomes = append(outcomes, map[string]any{"index": index, "passed": ok, "actual": actual, "diff": diff, "errors": caseErrors, "raw_sha256": fmt.Sprintf("%x", hashBytes([]byte(item.Raw)))})
 	}
 	total := len(cases)
 	score := 0
 	if total > 0 {
 		score = passed * 100 / total
 	}
-	return map[string]any{"total": total, "passed": passed, "failed": total - passed, "score": score, "results": outcomes}
+	status, reason := "failed", "one or more regression cases did not match the expected output"
+	if total == 0 {
+		status, reason = "no_cases", "add at least one non-empty input and expected output"
+	} else if passed == total {
+		status, reason = "passed", "all regression cases matched"
+	}
+	return map[string]any{"status": status, "reason": reason, "total": total, "passed": passed, "failed": total - passed, "score": score, "results": outcomes}
 }
 
 // parserArtifactChecksum binds review and deployment to the exact declarative
@@ -575,8 +589,9 @@ func (s *Server) runParserCases(cases []assuranceRequest) map[string]any {
 	passed := 0
 	total := len(cases)
 	results := make([]map[string]any, 0, total)
-	for _, item := range cases {
+	for index, item := range cases {
 		if strings.TrimSpace(item.Raw) == "" {
+			results = append(results, map[string]any{"index": index, "passed": false, "errors": []string{"validation input is empty"}})
 			continue
 		}
 		result := s.runAssurance(item)
@@ -584,9 +599,16 @@ func (s *Server) runParserCases(cases []assuranceRequest) map[string]any {
 			passed++
 		}
 		delete(result, "raw")
+		result["index"] = index
 		results = append(results, result)
 	}
-	return map[string]any{"total": total, "passed": passed, "failed": total - passed, "score": func() int {
+	status, reason := "failed", "one or more regression cases did not pass deterministic assurance"
+	if total == 0 {
+		status, reason = "no_cases", "add at least one validation case"
+	} else if passed == total {
+		status, reason = "passed", "all regression cases passed deterministic assurance"
+	}
+	return map[string]any{"status": status, "reason": reason, "total": total, "passed": passed, "failed": total - passed, "score": func() int {
 		if total == 0 {
 			return 0
 		}

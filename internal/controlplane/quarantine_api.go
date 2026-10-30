@@ -411,7 +411,7 @@ func (s *Server) handleQuarantineSummary(w http.ResponseWriter, r *http.Request)
 		jsonError(w, "quarantine summary unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	counts := map[string]int{"waiting": 0, "reprocessing": 0, "resolved": 0, "raw_available": 0, "total": len(records)}
+	counts := map[string]int{"waiting": 0, "actionable": 0, "reprocessing": 0, "resolved": 0, "raw_available": 0, "total": len(records)}
 	for _, item := range records {
 		switch item.Status {
 		case "waiting", "replay_failed":
@@ -425,6 +425,7 @@ func (s *Server) handleQuarantineSummary(w http.ResponseWriter, r *http.Request)
 			counts["raw_available"]++
 		}
 	}
+	counts["actionable"] = counts["waiting"]
 	counts["raw_retention_enabled"] = 0
 	if s.quarantine.enabled {
 		counts["raw_retention_enabled"] = 1
@@ -623,12 +624,19 @@ func (s *Server) handleQuarantineRawDelete(w http.ResponseWriter, r *http.Reques
 		jsonError(w, "retained evidence could not be deleted", http.StatusServiceUnavailable)
 		return
 	}
+	now := time.Now().UTC()
 	record.RawAvailable, record.RawExpiresAt = false, time.Time{}
+	if record.Status == "waiting" || record.Status == "replay_failed" {
+		record.Status = "evidence_deleted"
+		record.ExcludedAt = now
+		record.ExcludedBy = principal.Username
+		record.ExcludeReason = "retained raw evidence deleted; metadata retained for audit"
+	}
 	if err := s.putQuarantineRecord(r.Context(), record, doc.CreatedBy); err != nil {
 		jsonError(w, "evidence deleted but record metadata could not be updated", http.StatusServiceUnavailable)
 		return
 	}
-	if err := s.appendQuarantineHistory(r.Context(), quarantineHistoryEvent{Timestamp: time.Now().UTC(), Action: "raw_evidence_deleted", RecordID: id, NodeID: record.NodeID, Status: record.Status, Message: "Retained raw evidence permanently deleted by authorized operator."}, principal.Username); err != nil {
+	if err := s.appendQuarantineHistory(r.Context(), quarantineHistoryEvent{Timestamp: now, Action: "raw_evidence_deleted", RecordID: id, NodeID: record.NodeID, Status: record.Status, Message: "Retained raw evidence permanently deleted; metadata remains available for audit and is no longer actionable."}, principal.Username); err != nil {
 		jsonError(w, "evidence deleted but history could not be written", http.StatusServiceUnavailable)
 		return
 	}

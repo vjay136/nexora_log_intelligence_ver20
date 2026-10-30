@@ -408,8 +408,9 @@ func TestParserIndependentApproval(t *testing.T) {
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("review approve %d: %s", response.StatusCode, data)
 	}
-	if decodeMap(t, data)["state"] != "approved" {
-		t.Fatalf("not approved: %s", data)
+	approved := decodeMap(t, data)
+	if approved["catalog_state"] != "approved" || approved["state"] != "blocked" || approved["status"] != "blocked" {
+		t.Fatalf("approval and runtime readiness were not reported separately: %s", data)
 	}
 }
 
